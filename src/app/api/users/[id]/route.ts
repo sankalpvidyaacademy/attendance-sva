@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { hashPassword } from "@/lib/auth";
 
 export async function GET(
   request: Request,
@@ -24,6 +25,7 @@ export async function GET(
     return NextResponse.json({
       ...userWithoutPassword,
       subjects: user.subjects ? JSON.parse(user.subjects) : null,
+      plainPassword: user.plainPassword,
     });
   } catch (error) {
     console.error("Get user error:", error);
@@ -41,7 +43,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, class: className, subjects, phone, chatId } = body;
+    const { name, class: className, subjects, phone, chatId, password } = body;
 
     const existingUser = await db.user.findUnique({
       where: { id },
@@ -60,6 +62,10 @@ export async function PUT(
     if (subjects !== undefined) data.subjects = JSON.stringify(subjects);
     if (phone !== undefined) data.phone = phone;
     if (chatId !== undefined) data.chatId = chatId;
+    if (password !== undefined) {
+      data.password = await hashPassword(password);
+      data.plainPassword = password;
+    }
 
     const user = await db.user.update({
       where: { id },

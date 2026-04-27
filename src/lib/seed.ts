@@ -18,6 +18,7 @@ export async function seedAdmin() {
         name: "Shobhit",
         role: ROLES.ADMIN,
         password: hashedPassword,
+        plainPassword: "Shobhit@1502",
       },
     });
     console.log("Admin account created: shobhit / Shobhit@1502");

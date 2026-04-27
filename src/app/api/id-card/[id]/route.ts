@@ -14,7 +14,7 @@ export async function GET(
       select: {
         name: true,
         userId: true,
-        password: true,
+        plainPassword: true,
         class: true,
         subjects: true,
         role: true,
@@ -47,8 +47,12 @@ export async function GET(
 
     return NextResponse.json({
       user: {
-        ...user,
+        name: user.name,
+        userId: user.userId,
+        password: user.plainPassword,
+        class: user.class,
         subjects: parsedSubjects,
+        role: user.role,
       },
       qrCodeDataUrl,
     });

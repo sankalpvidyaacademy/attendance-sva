@@ -44,13 +44,13 @@ export function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "linear-gradient(135deg, #080616 0%, #1A1953 40%, #162E93 70%, #2F2FE4 100%)" }}>
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 backdrop-blur-lg">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-3 w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="mx-auto mb-4 w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: "linear-gradient(135deg, #2F2FE4, #162E93)" }}>
             <LogIn className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-700 to-teal-600 bg-clip-text text-transparent">
+          <CardTitle className="text-2xl font-bold" style={{ color: "#1A1953" }}>
             Sankalp Attendance
           </CardTitle>
           <CardDescription className="text-muted-foreground">
@@ -58,14 +58,14 @@ export function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3">
                 {error}
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="userId">User ID</Label>
+              <Label htmlFor="userId" className="text-sm font-medium" style={{ color: "#1A1953" }}>User ID</Label>
               <Input
                 id="userId"
                 type="text"
@@ -73,11 +73,11 @@ export function LoginForm() {
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 required
-                className="h-11"
+                className="h-11 rounded-xl border-gray-200 focus:border-[#2F2FE4] focus:ring-[#2F2FE4]"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium" style={{ color: "#1A1953" }}>Password</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -86,20 +86,22 @@ export function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-11 pr-10"
+                  className="h-11 pr-12 rounded-xl border-gray-200 focus:border-[#2F2FE4] focus:ring-[#2F2FE4]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-gray-100 transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-4 h-4 text-gray-500" /> : <Eye className="w-4 h-4 text-gray-500" />}
                 </button>
               </div>
             </div>
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-medium"
+              className="w-full h-11 rounded-xl font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:scale-[1.01]"
+              style={{ background: "linear-gradient(135deg, #2F2FE4, #162E93)" }}
               disabled={loading}
             >
               {loading ? (

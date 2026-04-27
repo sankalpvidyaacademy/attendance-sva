@@ -67,9 +67,23 @@ import {
   XCircle,
   Clock,
   ShieldCheck,
+  UserCheck,
+  UserX,
+  Coffee,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 
 import type { AuthUser } from "@/stores/auth-store";
+
+// ─── Color Theme Constants ──────────────────────────────────────────────────
+
+const THEME = {
+  primary: "#2F2FE4",
+  secondary: "#162E93",
+  accent: "#1A1953",
+  dark: "#080616",
+} as const;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -82,6 +96,7 @@ interface StudentOrTeacher {
   subjects?: string[] | null;
   phone?: string | null;
   chatId?: string | null;
+  plainPassword?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -122,6 +137,20 @@ interface SettingsData {
   dailyReportTime: string;
 }
 
+interface SubjectStatus {
+  subject: string;
+  status: string;
+}
+
+interface QRLogItem {
+  userId: string;
+  name: string;
+  role: string;
+  checkIn?: string | null;
+  checkOut?: string | null;
+  status: string;
+}
+
 interface DailyReportRecord {
   userId: string;
   name: string;
@@ -130,8 +159,24 @@ interface DailyReportRecord {
   status: string;
   checkIn?: string | null;
   checkOut?: string | null;
+  subjects: SubjectStatus[];
+}
+
+interface DailyReportData {
+  date: string;
+  timezone?: string;
+  isHoliday: boolean;
   holidayRemark?: string | null;
-  subjects: { subject: string; status: string }[];
+  summary: {
+    total: number;
+    present: number;
+    absent: number;
+    leave: number;
+    holiday: number;
+  };
+  qrLogs: QRLogItem[];
+  studentReport: DailyReportRecord[];
+  teacherReport: DailyReportRecord[];
 }
 
 interface MonthlyReportRecord {
@@ -148,12 +193,20 @@ interface MonthlyReportRecord {
   };
   subjectSummary: Record<
     string,
-    { present: number; absent: number; leave: number; holiday: number }
+    { present: number; absent: number; leave: number; holiday: number; noClass?: number }
   >;
   dailyStatus: Record<
     string,
     { status: string; checkIn?: string | null; checkOut?: string | null }
   >;
+  qrLogs?: { date: string; checkIn?: string | null; checkOut?: string | null }[];
+}
+
+interface MonthlyReportData {
+  month: string;
+  timezone?: string;
+  studentReport: MonthlyReportRecord[];
+  teacherReport: MonthlyReportRecord[];
 }
 
 interface AttendanceRecord {
@@ -191,21 +244,42 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
   const [activeTab, setActiveTab] = useState("students");
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col" style={{ background: THEME.dark }}>
       {/* Header */}
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header
+        className="sticky top-0 z-40 border-b border-white/10"
+        style={{
+          background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
+        }}
+      >
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-primary" />
-            <h1 className="text-lg font-bold tracking-tight">
-              Sankalp Attendance
-            </h1>
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center justify-center rounded-xl p-1.5"
+              style={{ background: THEME.primary }}
+            >
+              <ShieldCheck className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-white tracking-tight">
+                Sankalp Attendance
+              </h1>
+              <p className="text-[10px] text-white/50 hidden sm:block">
+                Management Dashboard
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground hidden sm:inline">
-              {userProp.name}
-            </span>
-            <Button variant="outline" size="sm" onClick={logout}>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10">
+              <div className="h-2 w-2 rounded-full bg-green-400" />
+              <span className="text-sm text-white/80">{userProp.name}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="border-white/20 text-white hover:bg-white/10 hover:text-white"
+            >
               <LogOut className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Logout</span>
             </Button>
@@ -214,39 +288,63 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
       </header>
 
       {/* Navigation Tabs */}
-      <div className="border-b bg-background">
+      <div className="border-b border-white/10" style={{ background: THEME.accent }}>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="px-2">
-            <TabsList className="h-auto flex w-full overflow-x-auto gap-0 p-1 bg-transparent justify-start">
-              <TabsTrigger value="students" className="gap-1 text-xs sm:text-sm">
+            <TabsList className="h-auto flex w-full overflow-x-auto gap-1 p-1.5 bg-transparent justify-start">
+              <TabsTrigger
+                value="students"
+                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+              >
                 <Users className="h-3.5 w-3.5" />
                 Students
               </TabsTrigger>
-              <TabsTrigger value="teachers" className="gap-1 text-xs sm:text-sm">
+              <TabsTrigger
+                value="teachers"
+                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+              >
                 <GraduationCap className="h-3.5 w-3.5" />
                 Teachers
               </TabsTrigger>
-              <TabsTrigger value="scanner" className="gap-1 text-xs sm:text-sm">
+              <TabsTrigger
+                value="scanner"
+                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+              >
                 <ScanLine className="h-3.5 w-3.5" />
                 Scanner
               </TabsTrigger>
-              <TabsTrigger value="idcards" className="gap-1 text-xs sm:text-sm">
+              <TabsTrigger
+                value="idcards"
+                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+              >
                 <IdCard className="h-3.5 w-3.5" />
                 ID Cards
               </TabsTrigger>
-              <TabsTrigger value="leave" className="gap-1 text-xs sm:text-sm">
+              <TabsTrigger
+                value="leave"
+                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+              >
                 <Clock className="h-3.5 w-3.5" />
                 Leave
               </TabsTrigger>
-              <TabsTrigger value="holidays" className="gap-1 text-xs sm:text-sm">
+              <TabsTrigger
+                value="holidays"
+                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+              >
                 <CalendarDays className="h-3.5 w-3.5" />
                 Holidays
               </TabsTrigger>
-              <TabsTrigger value="reports" className="gap-1 text-xs sm:text-sm">
+              <TabsTrigger
+                value="reports"
+                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+              >
                 <FileBarChart className="h-3.5 w-3.5" />
                 Reports
               </TabsTrigger>
-              <TabsTrigger value="settings" className="gap-1 text-xs sm:text-sm">
+              <TabsTrigger
+                value="settings"
+                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+              >
                 <Settings className="h-3.5 w-3.5" />
                 Settings
               </TabsTrigger>
@@ -341,27 +439,32 @@ function getAllSubjectsForClasses(classNames: string[]): string[] {
 }
 
 function getStatusBadge(status: string) {
-  const map: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-    PRESENT: "default",
-    ABSENT: "destructive",
-    LEAVE: "secondary",
-    HOLIDAY: "outline",
-    PENDING: "secondary",
-    APPROVED: "default",
-    REJECTED: "destructive",
-    NO_CLASS: "outline",
-  };
   const colorMap: Record<string, string> = {
-    PENDING: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100",
-    APPROVED: "bg-green-100 text-green-800 hover:bg-green-100",
-    REJECTED: "bg-red-100 text-red-800 hover:bg-red-100",
+    PRESENT: "bg-green-500/20 text-green-400 border-green-500/30",
+    ABSENT: "bg-red-500/20 text-red-400 border-red-500/30",
+    LEAVE: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+    HOLIDAY: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+    PENDING: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    APPROVED: "bg-green-500/20 text-green-400 border-green-500/30",
+    REJECTED: "bg-red-500/20 text-red-400 border-red-500/30",
+    NO_CLASS: "bg-gray-500/20 text-gray-400 border-gray-500/30",
   };
-  if (colorMap[status]) {
-    return (
-      <Badge className={colorMap[status]}>{status}</Badge>
-    );
-  }
-  return <Badge variant={map[status] || "outline"}>{status}</Badge>;
+  const cls = colorMap[status] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  return (
+    <Badge className={`${cls} rounded-full border text-[10px] font-semibold px-2.5 py-0.5`} variant="outline">
+      {status.replace("_", " ")}
+    </Badge>
+  );
+}
+
+// ─── Styled Card Wrapper ─────────────────────────────────────────────────────
+
+function ThemedCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <Card className={`bg-white/5 border-white/10 text-white backdrop-blur-sm ${className}`}>
+      {children}
+    </Card>
+  );
 }
 
 // ─── Students Tab ────────────────────────────────────────────────────────────
@@ -373,7 +476,6 @@ function StudentsTab() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editStudent, setEditStudent] = useState<StudentOrTeacher | null>(null);
   const [deleteStudent, setDeleteStudent] = useState<StudentOrTeacher | null>(null);
-  const [passwordMap, setPasswordMap] = useState<Record<string, string>>({});
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [createdCredentials, setCreatedCredentials] = useState<{
     userId: string;
@@ -467,10 +569,6 @@ function StudentsTab() {
         });
         if (res.ok) {
           const result = await res.json();
-          setPasswordMap((prev) => ({
-            ...prev,
-            [result.userId]: result.plainPassword,
-          }));
           setCreatedCredentials({
             userId: result.userId,
             plainPassword: result.plainPassword,
@@ -492,92 +590,96 @@ function StudentsTab() {
     setVisiblePasswords((prev) => ({ ...prev, [userId]: !prev[userId] }));
   };
 
-  const getPassword = (userId: string): string => {
-    return passwordMap[userId] || "••••••••";
-  };
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex-1 w-full sm:max-w-sm">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
             <Input
               placeholder="Search by name or ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
             />
           </div>
         </div>
-        <Button onClick={handleAdd} size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Add Student
+        <Button
+          onClick={handleAdd}
+          className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl shadow-lg shadow-[#2F2FE4]/25 min-h-[44px]"
+        >
+          <Plus className="h-4 w-4 mr-1.5" /> Add Student
         </Button>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
         </div>
       ) : students.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+        <ThemedCard>
+          <CardContent className="py-12 text-center text-white/40">
             No students found. Click &quot;Add Student&quot; to create one.
           </CardContent>
-        </Card>
+        </ThemedCard>
       ) : (
         <div className="space-y-3">
           {students.map((s) => (
-            <Card key={s.id}>
+            <ThemedCard key={s.id}>
               <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{s.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      ID: {s.userId}
+                    <div className="font-semibold text-white truncate">{s.name}</div>
+                    <div className="text-sm text-white/50 mt-0.5">
+                      ID: <span className="font-mono text-white/70">{s.userId}</span>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      Class: {s.class || "-"}
+                    <div className="text-sm text-white/50">
+                      Class: <span className="text-white/70">{s.class || "-"}</span>
                     </div>
                     {s.subjects && Array.isArray(s.subjects) && s.subjects.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <div className="flex flex-wrap gap-1 mt-2">
                         {s.subjects.map((sub) => (
-                          <Badge key={sub} variant="outline" className="text-xs">
+                          <Badge
+                            key={sub}
+                            variant="outline"
+                            className="text-[10px] bg-[#2F2FE4]/20 text-[#2F2FE4] border-[#2F2FE4]/30 rounded-full px-2"
+                          >
                             {sub}
                           </Badge>
                         ))}
                       </div>
                     )}
                     {s.phone && (
-                      <div className="text-sm text-muted-foreground">
-                        Phone: {s.phone}
+                      <div className="text-sm text-white/50 mt-1">
+                        Phone: <span className="text-white/70">{s.phone}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-muted-foreground">Password:</span>
-                      <span className="text-xs font-mono">
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-white/40">Password:</span>
+                      <span className="text-xs font-mono text-white/80">
                         {visiblePasswords[s.userId]
-                          ? getPassword(s.userId)
+                          ? s.plainPassword || "Not available"
                           : "••••••••"}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-white/10 text-white/50 hover:text-white/80"
                         onClick={() => togglePasswordVisibility(s.userId)}
                       >
                         {visiblePasswords[s.userId] ? (
-                          <EyeOff className="h-3 w-3" />
+                          <EyeOff className="h-3.5 w-3.5" />
                         ) : (
-                          <Eye className="h-3 w-3" />
+                          <Eye className="h-3.5 w-3.5" />
                         )}
                       </Button>
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex gap-2 shrink-0">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="border-white/10 text-white/70 hover:bg-white/10 hover:text-white min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => handleEdit(s)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -585,14 +687,15 @@ function StudentsTab() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => setDeleteStudent(s)}
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </ThemedCard>
           ))}
         </div>
       )}
@@ -826,7 +929,6 @@ function TeachersTab() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editTeacher, setEditTeacher] = useState<StudentOrTeacher | null>(null);
   const [deleteTeacher, setDeleteTeacher] = useState<StudentOrTeacher | null>(null);
-  const [passwordMap, setPasswordMap] = useState<Record<string, string>>({});
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [createdCredentials, setCreatedCredentials] = useState<{
     userId: string;
@@ -890,7 +992,6 @@ function TeachersTab() {
         : [];
       const teacherClasses: string[] = [];
 
-      // Figure out classes from subjects
       for (const cls of CLASSES) {
         const classSubjects = CLASS_SUBJECTS[cls] || [];
         if (teacherSubjects.some((s) => classSubjects.includes(s))) {
@@ -900,15 +1001,7 @@ function TeachersTab() {
 
       const today = new Date().toISOString().split("T")[0];
 
-      // Get students in those classes
       for (const cls of teacherClasses) {
-        const studentsRes = await fetch(`/api/users?role=STUDENT&class=${encodeURIComponent(cls)}`);
-        const studentsData = await studentsRes.json();
-        const studentList: StudentOrTeacher[] = Array.isArray(studentsData)
-          ? studentsData
-          : [];
-
-        // Mark NO_CLASS for each student in each subject this teacher teaches for this class
         const classSubjects = CLASS_SUBJECTS[cls] || [];
         const relevantSubjects = teacherSubjects.filter((s) =>
           classSubjects.includes(s)
@@ -974,10 +1067,6 @@ function TeachersTab() {
         });
         if (res.ok) {
           const result = await res.json();
-          setPasswordMap((prev) => ({
-            ...prev,
-            [result.userId]: result.plainPassword,
-          }));
           setCreatedCredentials({
             userId: result.userId,
             plainPassword: result.plainPassword,
@@ -999,89 +1088,93 @@ function TeachersTab() {
     setVisiblePasswords((prev) => ({ ...prev, [userId]: !prev[userId] }));
   };
 
-  const getPassword = (userId: string): string => {
-    return passwordMap[userId] || "••••••••";
-  };
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center justify-between">
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex-1 w-full sm:max-w-sm">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
             <Input
               placeholder="Search by name or ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
             />
           </div>
         </div>
-        <Button onClick={handleAdd} size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Add Teacher
+        <Button
+          onClick={handleAdd}
+          className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl shadow-lg shadow-[#2F2FE4]/25 min-h-[44px]"
+        >
+          <Plus className="h-4 w-4 mr-1.5" /> Add Teacher
         </Button>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
         </div>
       ) : teachers.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+        <ThemedCard>
+          <CardContent className="py-12 text-center text-white/40">
             No teachers found. Click &quot;Add Teacher&quot; to create one.
           </CardContent>
-        </Card>
+        </ThemedCard>
       ) : (
         <div className="space-y-3">
           {teachers.map((t) => (
-            <Card key={t.id}>
+            <ThemedCard key={t.id}>
               <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{t.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      ID: {t.userId}
+                    <div className="font-semibold text-white truncate">{t.name}</div>
+                    <div className="text-sm text-white/50 mt-0.5">
+                      ID: <span className="font-mono text-white/70">{t.userId}</span>
                     </div>
                     {t.subjects && Array.isArray(t.subjects) && t.subjects.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <div className="flex flex-wrap gap-1 mt-2">
                         {t.subjects.map((sub) => (
-                          <Badge key={sub} variant="outline" className="text-xs">
+                          <Badge
+                            key={sub}
+                            variant="outline"
+                            className="text-[10px] bg-[#2F2FE4]/20 text-[#2F2FE4] border-[#2F2FE4]/30 rounded-full px-2"
+                          >
                             {sub}
                           </Badge>
                         ))}
                       </div>
                     )}
                     {t.phone && (
-                      <div className="text-sm text-muted-foreground">
-                        Phone: {t.phone}
+                      <div className="text-sm text-white/50 mt-1">
+                        Phone: <span className="text-white/70">{t.phone}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs text-muted-foreground">Password:</span>
-                      <span className="text-xs font-mono">
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-xs text-white/40">Password:</span>
+                      <span className="text-xs font-mono text-white/80">
                         {visiblePasswords[t.userId]
-                          ? getPassword(t.userId)
+                          ? t.plainPassword || "Not available"
                           : "••••••••"}
                       </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-white/10 text-white/50 hover:text-white/80"
                         onClick={() => togglePasswordVisibility(t.userId)}
                       >
                         {visiblePasswords[t.userId] ? (
-                          <EyeOff className="h-3 w-3" />
+                          <EyeOff className="h-3.5 w-3.5" />
                         ) : (
-                          <Eye className="h-3 w-3" />
+                          <Eye className="h-3.5 w-3.5" />
                         )}
                       </Button>
                     </div>
                   </div>
-                  <div className="flex gap-1 shrink-0 flex-wrap">
+                  <div className="flex gap-2 shrink-0 flex-wrap">
                     <Button
                       variant="outline"
                       size="sm"
+                      className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 min-h-[44px] rounded-xl"
                       onClick={() => handleMarkClassOff(t)}
                       disabled={markingOff === t.id}
                     >
@@ -1090,11 +1183,12 @@ function TeachersTab() {
                       ) : (
                         <X className="h-3.5 w-3.5" />
                       )}
-                      <span className="ml-1 text-xs">Mark Off</span>
+                      <span className="ml-1.5 text-xs">Mark Off</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="border-white/10 text-white/70 hover:bg-white/10 hover:text-white min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => handleEdit(t)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -1102,14 +1196,15 @@ function TeachersTab() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => setDeleteTeacher(t)}
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </ThemedCard>
           ))}
         </div>
       )}
@@ -1252,7 +1347,6 @@ function TeacherFormContent({
   const toggleClass = (cls: string) => {
     setSelectedClasses((prev) => {
       const next = prev.includes(cls) ? prev.filter((c) => c !== cls) : [...prev, cls];
-      // Update subjects to only keep those valid for selected classes
       const validSubjects = getAllSubjectsForClasses(next);
       setSubjects((currentSubs) =>
         currentSubs.filter((s) => validSubjects.includes(s))
@@ -1445,24 +1539,28 @@ function QRScannerTab() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <ThemedCard>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <QrCode className="h-5 w-5" /> QR Scanner
+          <CardTitle className="flex items-center gap-2 text-white">
+            <QrCode className="h-5 w-5 text-[#2F2FE4]" /> QR Scanner
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="scan-input">User ID</Label>
+            <Label className="text-white/70">User ID</Label>
             <div className="flex gap-2">
               <Input
-                id="scan-input"
                 placeholder="Enter or scan User ID"
                 value={scanInput}
                 onChange={(e) => setScanInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleScan()}
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
               />
-              <Button onClick={handleScan} disabled={scanning}>
+              <Button
+                onClick={handleScan}
+                disabled={scanning}
+                className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl min-w-[44px] min-h-[44px]"
+              >
                 {scanning ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
@@ -1473,27 +1571,27 @@ function QRScannerTab() {
           </div>
           <Button
             variant="outline"
-            className="w-full"
+            className="w-full border-white/10 text-white/70 hover:bg-white/10 hover:text-white rounded-xl min-h-[44px]"
             onClick={() => setCameraOpen(!cameraOpen)}
           >
             <Camera className="h-4 w-4 mr-2" />
             {cameraOpen ? "Close Camera" : "Open Camera (Scan QR)"}
           </Button>
           {cameraOpen && (
-            <div className="rounded-lg border overflow-hidden">
+            <div className="rounded-xl border border-white/10 overflow-hidden">
               <CameraView onScan={(code) => { setScanInput(code); setCameraOpen(false); }} />
             </div>
           )}
           {scanResult && (
-            <Card className="bg-muted">
+            <ThemedCard className="bg-[#2F2FE4]/10 border-[#2F2FE4]/20">
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
                   {scanResult.type === "checkIn" ? (
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <CheckCircle className="h-5 w-5 text-green-400" />
                   ) : (
-                    <XCircle className="h-5 w-5 text-orange-600" />
+                    <XCircle className="h-5 w-5 text-orange-400" />
                   )}
-                  <span className="font-medium">
+                  <span className="font-medium text-white">
                     {scanResult.type === "checkIn"
                       ? "Check-In"
                       : scanResult.type === "checkOut"
@@ -1501,16 +1599,14 @@ function QRScannerTab() {
                         : "Updated"}
                   </span>
                 </div>
-                <div className="text-sm space-y-1">
+                <div className="text-sm text-white/70 space-y-1">
                   <div>
                     User ID:{" "}
-                    <span className="font-mono">
+                    <span className="font-mono text-white">
                       {scanResult.attendance.userId}
                     </span>
                   </div>
-                  <div>
-                    Date: {scanResult.attendance.date}
-                  </div>
+                  <div>Date: {scanResult.attendance.date}</div>
                   <div>
                     Check-In:{" "}
                     {formatTimeStr(scanResult.attendance.checkIn)}
@@ -1519,56 +1615,56 @@ function QRScannerTab() {
                     Check-Out:{" "}
                     {formatTimeStr(scanResult.attendance.checkOut)}
                   </div>
-                  <div>
+                  <div className="pt-1">
                     Status: {getStatusBadge(scanResult.attendance.status)}
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </ThemedCard>
           )}
         </CardContent>
-      </Card>
+      </ThemedCard>
 
-      <Card>
+      <ThemedCard>
         <CardHeader>
-          <CardTitle className="text-base">
+          <CardTitle className="text-base text-white">
             Today&apos;s Attendance ({formatDateStr(today)})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loadingAttendance ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-6 w-6 animate-spin text-white/40" />
             </div>
           ) : todayAttendance.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">
+            <p className="text-white/40 text-center py-4">
               No attendance records for today.
             </p>
           ) : (
             <ScrollArea className="max-h-96">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Check-In</TableHead>
-                    <TableHead>Check-Out</TableHead>
-                    <TableHead>Status</TableHead>
+                  <TableRow className="border-white/10 hover:bg-transparent">
+                    <TableHead className="text-white/50">Name</TableHead>
+                    <TableHead className="text-white/50">ID</TableHead>
+                    <TableHead className="text-white/50">Check-In</TableHead>
+                    <TableHead className="text-white/50">Check-Out</TableHead>
+                    <TableHead className="text-white/50">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {todayAttendance.map((rec) => (
-                    <TableRow key={rec.id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={rec.id} className="border-white/5 hover:bg-white/5">
+                      <TableCell className="font-medium text-white">
                         {rec.user?.name || "-"}
                       </TableCell>
-                      <TableCell className="font-mono text-xs">
+                      <TableCell className="font-mono text-xs text-white/70">
                         {rec.userId}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-white/70">
                         {formatTimeStr(rec.checkIn)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-white/70">
                         {formatTimeStr(rec.checkOut)}
                       </TableCell>
                       <TableCell>{getStatusBadge(rec.status)}</TableCell>
@@ -1579,7 +1675,7 @@ function QRScannerTab() {
             </ScrollArea>
           )}
         </CardContent>
-      </Card>
+      </ThemedCard>
     </div>
   );
 }
@@ -1600,7 +1696,7 @@ function CameraView({ onScan }: { onScan: (code: string) => void }) {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-      } catch (err) {
+      } catch {
         setError("Camera access denied or not available. Please type the User ID manually.");
       }
     }
@@ -1614,7 +1710,7 @@ function CameraView({ onScan }: { onScan: (code: string) => void }) {
 
   if (error) {
     return (
-      <div className="p-4 text-center text-sm text-muted-foreground bg-muted">
+      <div className="p-4 text-center text-sm text-white/40 bg-white/5">
         {error}
       </div>
     );
@@ -1633,9 +1729,8 @@ function CameraView({ onScan }: { onScan: (code: string) => void }) {
         <Button
           size="sm"
           variant="secondary"
+          className="min-h-[44px] rounded-xl"
           onClick={() => {
-            // In a real app, we'd use a QR scanning library here
-            // For now, simulate by prompting
             const code = window.prompt("Enter the scanned User ID:");
             if (code) onScan(code);
           }}
@@ -1705,36 +1800,42 @@ function IDCardsTab() {
       if (!ctx) return;
 
       ctx.scale(scale, scale);
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = "#080616";
       ctx.fillRect(0, 0, 350, 500);
 
-      // Header
-      ctx.fillStyle = "#1e293b";
+      // Header gradient
+      const gradient = ctx.createLinearGradient(0, 0, 350, 70);
+      gradient.addColorStop(0, "#1A1953");
+      gradient.addColorStop(1, "#2F2FE4");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 350, 70);
+
+      // Header text
+      ctx.fillStyle = "#ffffff";
       ctx.font = "bold 22px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("Sankalp", 175, 40);
 
       // Name
-      ctx.fillStyle = "#0f172a";
+      ctx.fillStyle = "#ffffff";
       ctx.font = "bold 16px sans-serif";
-      ctx.fillText(selectedCard.user.name, 175, 80);
+      ctx.fillText(selectedCard.user.name, 175, 100);
 
       // Class
       if (selectedCard.user.class) {
-        ctx.fillStyle = "#475569";
+        ctx.fillStyle = "#a0a0ff";
         ctx.font = "14px sans-serif";
-        ctx.fillText(selectedCard.user.class, 175, 105);
+        ctx.fillText(selectedCard.user.class, 175, 125);
       }
 
       // Subjects
       if (selectedCard.user.subjects.length > 0) {
-        ctx.fillStyle = "#64748b";
+        ctx.fillStyle = "#8080cc";
         ctx.font = "11px sans-serif";
         const subjectStr = selectedCard.user.subjects.join(", ");
-        // Word wrap
         const words = subjectStr.split(", ");
         let line = "";
-        let y = selectedCard.user.class ? 125 : 105;
+        let y = selectedCard.user.class ? 145 : 125;
         for (const word of words) {
           const testLine = line ? line + ", " + word : word;
           if (ctx.measureText(testLine).width > 300) {
@@ -1752,14 +1853,14 @@ function IDCardsTab() {
       }
 
       // User ID
-      ctx.fillStyle = "#1e293b";
+      ctx.fillStyle = "#ffffff";
       ctx.font = "13px monospace";
-      ctx.fillText(`ID: ${selectedCard.user.userId}`, 175, 170);
+      ctx.fillText(`ID: ${selectedCard.user.userId}`, 175, 190);
 
       // Password
-      ctx.fillStyle = "#475569";
+      ctx.fillStyle = "#a0a0ff";
       ctx.font = "12px monospace";
-      ctx.fillText(`Password: ${selectedCard.user.password}`, 175, 195);
+      ctx.fillText(`Password: ${selectedCard.user.password}`, 175, 215);
 
       // QR Code
       const qrImg = new Image();
@@ -1774,15 +1875,14 @@ function IDCardsTab() {
 
       const qrSize = 180;
       const qrX = (350 - qrSize) / 2;
-      ctx.drawImage(qrImg, qrX, 220, qrSize, qrSize);
+      ctx.drawImage(qrImg, qrX, 240, qrSize, qrSize);
 
       // Footer
-      ctx.fillStyle = "#94a3b8";
+      ctx.fillStyle = "#6060a0";
       ctx.font = "10px sans-serif";
-      ctx.fillText("Scan QR code to mark attendance", 175, 430);
-      ctx.fillText("Sankalp Attendance Management", 175, 450);
+      ctx.fillText("Scan QR code to mark attendance", 175, 445);
+      ctx.fillText("Sankalp Attendance Management", 175, 465);
 
-      // Download
       const link = document.createElement("a");
       link.download = `${selectedCard.user.name}_${selectedCard.user.userId}.jpg`;
       link.href = canvas.toDataURL("image/jpeg", 0.95);
@@ -1803,40 +1903,41 @@ function IDCardsTab() {
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
         <Input
           placeholder="Search users..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
+          className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
         />
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
         </div>
       ) : filteredUsers.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+        <ThemedCard>
+          <CardContent className="py-12 text-center text-white/40">
             No users found.
           </CardContent>
-        </Card>
+        </ThemedCard>
       ) : (
         <div className="space-y-3">
           {filteredUsers.map((u) => (
-            <Card key={u.id}>
+            <ThemedCard key={u.id}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div className="min-w-0">
-                  <div className="font-medium truncate">{u.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {u.userId} &middot; {u.role}
+                  <div className="font-semibold text-white truncate">{u.name}</div>
+                  <div className="text-sm text-white/50">
+                    {u.userId} &middot; <span className="text-[#2F2FE4]">{u.role}</span>
                     {u.class ? ` · ${u.class}` : ""}
                   </div>
                 </div>
                 <Button
                   size="sm"
                   variant="outline"
+                  className="border-[#2F2FE4]/30 text-[#2F2FE4] hover:bg-[#2F2FE4]/10 min-h-[44px] rounded-xl"
                   onClick={() => handleGenerateCard(u.userId, u.id)}
                   disabled={loadingCard === u.id}
                 >
@@ -1845,10 +1946,10 @@ function IDCardsTab() {
                   ) : (
                     <IdCard className="h-4 w-4" />
                   )}
-                  <span className="ml-1">ID Card</span>
+                  <span className="ml-1.5">ID Card</span>
                 </Button>
               </CardContent>
-            </Card>
+            </ThemedCard>
           ))}
         </div>
       )}
@@ -1863,42 +1964,43 @@ function IDCardsTab() {
             <div className="flex flex-col items-center">
               <div
                 id="id-card-preview"
-                className="w-[350px] bg-white rounded-xl border shadow-lg p-6 text-center"
+                className="w-[350px] rounded-2xl border-2 border-[#2F2FE4]/30 p-6 text-center"
+                style={{ background: `linear-gradient(180deg, ${THEME.accent}, ${THEME.dark})` }}
               >
-                <div className="text-2xl font-bold text-slate-800 mb-2">
+                <div className="text-2xl font-bold text-white mb-2">
                   Sankalp
                 </div>
-                <Separator className="my-2" />
-                <div className="text-lg font-semibold text-slate-900">
+                <Separator className="my-2 bg-white/20" />
+                <div className="text-lg font-semibold text-white">
                   {selectedCard.user.name}
                 </div>
                 {selectedCard.user.class && (
-                  <div className="text-sm text-slate-600 mt-1">
+                  <div className="text-sm text-[#2F2FE4] mt-1">
                     {selectedCard.user.class}
                   </div>
                 )}
                 {selectedCard.user.subjects.length > 0 && (
-                  <div className="text-xs text-slate-500 mt-1">
+                  <div className="text-xs text-white/50 mt-1">
                     {selectedCard.user.subjects.join(", ")}
                   </div>
                 )}
-                <div className="mt-3 text-sm font-mono text-slate-700">
+                <div className="mt-3 text-sm font-mono text-white/80">
                   ID: {selectedCard.user.userId}
                 </div>
-                <div className="text-xs font-mono text-slate-500">
+                <div className="text-xs font-mono text-white/50">
                   Password: {selectedCard.user.password}
                 </div>
                 <div className="mt-4 flex justify-center">
                   <img
                     src={selectedCard.qrCodeDataUrl}
                     alt="QR Code"
-                    className="w-44 h-44"
+                    className="w-44 h-44 rounded-lg"
                   />
                 </div>
-                <div className="mt-2 text-xs text-slate-400">
+                <div className="mt-2 text-xs text-white/30">
                   Scan QR code to mark attendance
                 </div>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-white/30">
                   Sankalp Attendance Management
                 </div>
               </div>
@@ -1911,7 +2013,10 @@ function IDCardsTab() {
             >
               Close
             </Button>
-            <Button onClick={handleDownload}>
+            <Button
+              onClick={handleDownload}
+              className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white"
+            >
               <Download className="h-4 w-4 mr-1" /> Download JPG
             </Button>
           </DialogFooter>
@@ -1976,9 +2081,9 @@ function LeaveTab({ adminUserId }: { adminUserId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Label className="text-sm">Filter:</Label>
+        <Label className="text-white/60 text-sm">Filter:</Label>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -1992,57 +2097,59 @@ function LeaveTab({ adminUserId }: { adminUserId: string }) {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
         </div>
       ) : leaves.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+        <ThemedCard>
+          <CardContent className="py-12 text-center text-white/40">
             No leave requests found.
           </CardContent>
-        </Card>
+        </ThemedCard>
       ) : (
         <div className="space-y-3">
           {leaves.map((leave) => (
-            <Card key={leave.id}>
+            <ThemedCard key={leave.id}>
               <CardContent className="p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium">{leave.user?.name || "-"}</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="font-semibold text-white">{leave.user?.name || "-"}</div>
+                    <div className="text-sm text-white/50">
                       ID: {leave.user?.userId} &middot; {leave.user?.role}
                       {leave.user?.class ? ` · ${leave.user.class}` : ""}
                     </div>
-                    <div className="text-sm mt-1">
+                    <div className="text-sm text-white/70 mt-1">
                       {formatDateStr(leave.fromDate)} →{" "}
                       {formatDateStr(leave.toDate)}
                     </div>
                     {leave.remark && (
-                      <div className="text-sm text-muted-foreground mt-1">
+                      <div className="text-sm text-white/40 mt-1">
                         {leave.remark}
                       </div>
                     )}
-                    <div className="mt-1">{getStatusBadge(leave.status)}</div>
+                    <div className="mt-2">{getStatusBadge(leave.status)}</div>
                   </div>
                   {leave.status === "PENDING" && (
                     <div className="flex gap-2 shrink-0">
                       <Button
                         size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-xl min-h-[44px] shadow-lg shadow-green-600/20"
                         onClick={() => handleReview(leave.id, "APPROVED")}
                       >
-                        <CheckCircle className="h-3.5 w-3.5 mr-1" /> Approve
+                        <CheckCircle className="h-3.5 w-3.5 mr-1.5" /> Approve
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
+                        className="rounded-xl min-h-[44px] shadow-lg"
                         onClick={() => handleReview(leave.id, "REJECTED")}
                       >
-                        <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
+                        <XCircle className="h-3.5 w-3.5 mr-1.5" /> Reject
                       </Button>
                     </div>
                   )}
                 </div>
               </CardContent>
-            </Card>
+            </ThemedCard>
           ))}
         </div>
       )}
@@ -2096,38 +2203,45 @@ function HolidaysTab() {
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={() => setShowAddDialog(true)} size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Add Holiday
+        <Button
+          onClick={() => setShowAddDialog(true)}
+          className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl shadow-lg shadow-[#2F2FE4]/25 min-h-[44px]"
+        >
+          <Plus className="h-4 w-4 mr-1.5" /> Add Holiday
         </Button>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
         </div>
       ) : holidays.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+        <ThemedCard>
+          <CardContent className="py-12 text-center text-white/40">
             No holidays found. Click &quot;Add Holiday&quot; to create one.
           </CardContent>
-        </Card>
+        </ThemedCard>
       ) : (
         <div className="space-y-3">
           {holidays.map((h) => (
-            <Card key={h.id}>
+            <ThemedCard key={h.id}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <div className="font-medium">
+                  <div className="font-semibold text-white">
                     {formatDateStr(h.date)}
                   </div>
                   {h.remark && (
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-sm text-white/50">
                       {h.remark}
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-1 mt-1">
+                  <div className="flex flex-wrap gap-1 mt-2">
                     {h.classes.map((cls) => (
-                      <Badge key={cls} variant="outline" className="text-xs">
+                      <Badge
+                        key={cls}
+                        variant="outline"
+                        className="text-[10px] bg-purple-500/20 text-purple-400 border-purple-500/30 rounded-full px-2"
+                      >
                         {cls}
                       </Badge>
                     ))}
@@ -2136,12 +2250,13 @@ function HolidaysTab() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
                   onClick={() => setDeleteHoliday(h)}
                 >
-                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </CardContent>
-            </Card>
+            </ThemedCard>
           ))}
         </div>
       )}
@@ -2342,9 +2457,19 @@ function ReportsTab() {
   return (
     <div className="space-y-4">
       <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList>
-          <TabsTrigger value="daily">Daily</TabsTrigger>
-          <TabsTrigger value="monthly">Monthly</TabsTrigger>
+        <TabsList className="bg-white/5 border border-white/10">
+          <TabsTrigger
+            value="daily"
+            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg"
+          >
+            Daily
+          </TabsTrigger>
+          <TabsTrigger
+            value="monthly"
+            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg"
+          >
+            Monthly
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="daily">
           <DailyReport />
@@ -2362,20 +2487,10 @@ function ReportsTab() {
 function DailyReport() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [className, setClassName] = useState<string>("ALL");
-  const [report, setReport] = useState<{
-    date: string;
-    isHoliday: boolean;
-    holidayRemark?: string | null;
-    summary: {
-      total: number;
-      present: number;
-      absent: number;
-      leave: number;
-      holiday: number;
-    };
-    report: DailyReportRecord[];
-  } | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [report, setReport] = useState<DailyReportData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [reportSection, setReportSection] = useState<string>("students");
 
   const generate = async () => {
     if (!date) {
@@ -2387,6 +2502,7 @@ function DailyReport() {
       const dateStr = date.toISOString().split("T")[0];
       const params = new URLSearchParams({ date: dateStr });
       if (className !== "ALL") params.set("class", className);
+      if (roleFilter !== "ALL") params.set("role", roleFilter);
       const res = await fetch(`/api/reports/daily?${params.toString()}`);
       const data = await res.json();
       if (res.ok) {
@@ -2403,16 +2519,16 @@ function DailyReport() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <ThemedCard>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-end">
             <div className="space-y-2 flex-1">
-              <Label>Date</Label>
+              <Label className="text-white/60">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left font-normal"
+                    className="w-full justify-start text-left font-normal border-white/10 text-white hover:bg-white/10"
                   >
                     <CalendarDays className="mr-2 h-4 w-4" />
                     {date
@@ -2430,9 +2546,9 @@ function DailyReport() {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label>Class</Label>
+              <Label className="text-white/60">Class</Label>
               <Select value={className} onValueChange={setClassName}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -2445,113 +2561,302 @@ function DailyReport() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={generate} disabled={loading}>
+            <div className="space-y-2">
+              <Label className="text-white/60">Role</Label>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
+                  <SelectItem value="STUDENT">Student</SelectItem>
+                  <SelectItem value="TEACHER">Teacher</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={generate}
+              disabled={loading}
+              className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl shadow-lg shadow-[#2F2FE4]/25 min-h-[44px]"
+            >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <FileBarChart className="h-4 w-4" />
               )}
-              <span className="ml-1">Generate</span>
+              <span className="ml-1.5">Generate</span>
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </ThemedCard>
 
       {report && (
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <Card>
+            <ThemedCard>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold">{report.summary.total}</div>
-                <div className="text-xs text-muted-foreground">Total</div>
+                <div className="flex justify-center mb-2">
+                  <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-white/60" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-white">{report.summary.total}</div>
+                <div className="text-xs text-white/40">Total</div>
               </CardContent>
-            </Card>
-            <Card>
+            </ThemedCard>
+            <ThemedCard>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
+                <div className="flex justify-center mb-2">
+                  <div className="h-10 w-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                    <UserCheck className="h-5 w-5 text-green-400" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-green-400">
                   {report.summary.present}
                 </div>
-                <div className="text-xs text-muted-foreground">Present</div>
+                <div className="text-xs text-white/40">Present</div>
               </CardContent>
-            </Card>
-            <Card>
+            </ThemedCard>
+            <ThemedCard>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">
+                <div className="flex justify-center mb-2">
+                  <div className="h-10 w-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                    <UserX className="h-5 w-5 text-red-400" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-red-400">
                   {report.summary.absent}
                 </div>
-                <div className="text-xs text-muted-foreground">Absent</div>
+                <div className="text-xs text-white/40">Absent</div>
               </CardContent>
-            </Card>
-            <Card>
+            </ThemedCard>
+            <ThemedCard>
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">
+                <div className="flex justify-center mb-2">
+                  <div className="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                    <Coffee className="h-5 w-5 text-amber-400" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-amber-400">
                   {report.summary.leave}
                 </div>
-                <div className="text-xs text-muted-foreground">Leave</div>
+                <div className="text-xs text-white/40">Leave</div>
               </CardContent>
-            </Card>
-            <Card>
+            </ThemedCard>
+            <ThemedCard className="col-span-2 sm:col-span-1">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="flex justify-center mb-2">
+                  <div className="h-10 w-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-purple-400" />
+                  </div>
+                </div>
+                <div className="text-2xl font-bold text-purple-400">
                   {report.summary.holiday}
                 </div>
-                <div className="text-xs text-muted-foreground">Holiday</div>
+                <div className="text-xs text-white/40">Holiday</div>
               </CardContent>
-            </Card>
+            </ThemedCard>
           </div>
 
           {report.isHoliday && report.holidayRemark && (
-            <Card className="bg-blue-50">
+            <ThemedCard className="bg-purple-500/10 border-purple-500/20">
               <CardContent className="p-4">
-                <span className="text-sm font-medium">Holiday: </span>
-                <span className="text-sm">{report.holidayRemark}</span>
+                <span className="text-sm font-medium text-purple-300">Holiday: </span>
+                <span className="text-sm text-purple-200">{report.holidayRemark}</span>
               </CardContent>
-            </Card>
+            </ThemedCard>
           )}
 
-          {/* Detail Table */}
-          {report.report.length > 0 && (
-            <Card>
+          {/* QR Logs Section */}
+          {report.qrLogs && report.qrLogs.length > 0 && (
+            <ThemedCard>
+              <CardHeader>
+                <CardTitle className="text-base text-white flex items-center gap-2">
+                  <ScanLine className="h-4 w-4 text-[#2F2FE4]" /> QR Logs
+                </CardTitle>
+              </CardHeader>
               <CardContent className="p-0">
-                <ScrollArea className="max-h-96">
+                <ScrollArea className="max-h-64">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Check-In</TableHead>
-                        <TableHead>Check-Out</TableHead>
-                        <TableHead>Status</TableHead>
+                      <TableRow className="border-white/10 hover:bg-transparent">
+                        <TableHead className="text-white/50">Name</TableHead>
+                        <TableHead className="text-white/50">Role</TableHead>
+                        <TableHead className="text-white/50">Check-In</TableHead>
+                        <TableHead className="text-white/50">Check-Out</TableHead>
+                        <TableHead className="text-white/50">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {report.report.map((rec) => (
-                        <TableRow key={rec.userId}>
-                          <TableCell className="font-medium">
-                            {rec.name}
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">
-                            {rec.userId}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {rec.class || "-"}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {formatTimeStr(rec.checkIn)}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {formatTimeStr(rec.checkOut)}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(rec.status)}</TableCell>
+                      {report.qrLogs.map((log, i) => (
+                        <TableRow key={`${log.userId}-${i}`} className="border-white/5 hover:bg-white/5">
+                          <TableCell className="font-medium text-white">{log.name}</TableCell>
+                          <TableCell className="text-white/70 text-sm">{log.role}</TableCell>
+                          <TableCell className="text-white/70 text-sm">{formatTimeStr(log.checkIn)}</TableCell>
+                          <TableCell className="text-white/70 text-sm">{formatTimeStr(log.checkOut)}</TableCell>
+                          <TableCell>{getStatusBadge(log.status)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </ScrollArea>
               </CardContent>
-            </Card>
+            </ThemedCard>
+          )}
+
+          {/* Report Sections Tabs */}
+          {(report.studentReport.length > 0 || report.teacherReport.length > 0) && (
+            <Tabs value={reportSection} onValueChange={setReportSection}>
+              <TabsList className="bg-white/5 border border-white/10">
+                {report.studentReport.length > 0 && (
+                  <TabsTrigger
+                    value="students"
+                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg gap-1.5"
+                  >
+                    <GraduationCap className="h-3.5 w-3.5" /> Students ({report.studentReport.length})
+                  </TabsTrigger>
+                )}
+                {report.teacherReport.length > 0 && (
+                  <TabsTrigger
+                    value="teachers"
+                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg gap-1.5"
+                  >
+                    <Users className="h-3.5 w-3.5" /> Teachers ({report.teacherReport.length})
+                  </TabsTrigger>
+                )}
+              </TabsList>
+
+              {report.studentReport.length > 0 && (
+                <TabsContent value="students">
+                  <ThemedCard>
+                    <CardContent className="p-0">
+                      <ScrollArea className="max-h-96">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-white/10 hover:bg-transparent">
+                              <TableHead className="text-white/50">Name</TableHead>
+                              <TableHead className="text-white/50">ID</TableHead>
+                              <TableHead className="text-white/50">Class</TableHead>
+                              <TableHead className="text-white/50">Check-In</TableHead>
+                              <TableHead className="text-white/50">Check-Out</TableHead>
+                              <TableHead className="text-white/50">Status</TableHead>
+                              <TableHead className="text-white/50">Subjects</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {report.studentReport.map((rec) => (
+                              <TableRow key={rec.userId} className="border-white/5 hover:bg-white/5">
+                                <TableCell className="font-medium text-white">{rec.name}</TableCell>
+                                <TableCell className="font-mono text-xs text-white/70">{rec.userId}</TableCell>
+                                <TableCell className="text-sm text-white/70">{rec.class || "-"}</TableCell>
+                                <TableCell className="text-sm text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
+                                <TableCell className="text-sm text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
+                                <TableCell>{getStatusBadge(rec.status)}</TableCell>
+                                <TableCell>
+                                  {rec.subjects && rec.subjects.length > 0 ? (
+                                    <div className="flex flex-wrap gap-0.5">
+                                      {rec.subjects.map((sub, i) => (
+                                        <span
+                                          key={i}
+                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/50"
+                                          title={`${sub.subject}: ${sub.status}`}
+                                        >
+                                          {sub.subject.charAt(0)}
+                                          <span className={`ml-0.5 ${
+                                            sub.status === "PRESENT" ? "text-green-400" :
+                                            sub.status === "ABSENT" ? "text-red-400" :
+                                            sub.status === "LEAVE" ? "text-amber-400" :
+                                            sub.status === "HOLIDAY" ? "text-purple-400" :
+                                            sub.status === "NO_CLASS" ? "text-gray-400" :
+                                            "text-white/40"
+                                          }`}>
+                                            {sub.status.charAt(0)}
+                                          </span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="text-white/30">-</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </CardContent>
+                  </ThemedCard>
+                </TabsContent>
+              )}
+
+              {report.teacherReport.length > 0 && (
+                <TabsContent value="teachers">
+                  <ThemedCard>
+                    <CardContent className="p-0">
+                      <ScrollArea className="max-h-96">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-white/10 hover:bg-transparent">
+                              <TableHead className="text-white/50">Name</TableHead>
+                              <TableHead className="text-white/50">ID</TableHead>
+                              <TableHead className="text-white/50">Check-In</TableHead>
+                              <TableHead className="text-white/50">Check-Out</TableHead>
+                              <TableHead className="text-white/50">Status</TableHead>
+                              <TableHead className="text-white/50">Subjects</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {report.teacherReport.map((rec) => (
+                              <TableRow key={rec.userId} className="border-white/5 hover:bg-white/5">
+                                <TableCell className="font-medium text-white">{rec.name}</TableCell>
+                                <TableCell className="font-mono text-xs text-white/70">{rec.userId}</TableCell>
+                                <TableCell className="text-sm text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
+                                <TableCell className="text-sm text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
+                                <TableCell>{getStatusBadge(rec.status)}</TableCell>
+                                <TableCell>
+                                  {rec.subjects && rec.subjects.length > 0 ? (
+                                    <div className="flex flex-wrap gap-0.5">
+                                      {rec.subjects.map((sub, i) => (
+                                        <span
+                                          key={i}
+                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/50"
+                                          title={`${sub.subject}: ${sub.status}`}
+                                        >
+                                          {sub.subject.charAt(0)}
+                                          <span className={`ml-0.5 ${
+                                            sub.status === "PRESENT" ? "text-green-400" :
+                                            sub.status === "ABSENT" ? "text-red-400" :
+                                            sub.status === "NO_CLASS" ? "text-gray-400" :
+                                            "text-white/40"
+                                          }`}>
+                                            {sub.status.charAt(0)}
+                                          </span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <span className="text-white/30">-</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </ScrollArea>
+                    </CardContent>
+                  </ThemedCard>
+                </TabsContent>
+              )}
+            </Tabs>
+          )}
+
+          {report.studentReport.length === 0 && report.teacherReport.length === 0 && (
+            <ThemedCard>
+              <CardContent className="py-12 text-center text-white/40">
+                No data found for the selected filters.
+              </CardContent>
+            </ThemedCard>
           )}
         </>
       )}
@@ -2567,13 +2872,11 @@ function MonthlyReport() {
     `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
   );
   const [className, setClassName] = useState<string>("ALL");
-  const [report, setReport] = useState<{
-    month: string;
-    timezone: string;
-    report: MonthlyReportRecord[];
-  } | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [report, setReport] = useState<MonthlyReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [reportSection, setReportSection] = useState<string>("students");
 
   const generate = async () => {
     if (!month) {
@@ -2584,6 +2887,7 @@ function MonthlyReport() {
     try {
       const params = new URLSearchParams({ month });
       if (className !== "ALL") params.set("class", className);
+      if (roleFilter !== "ALL") params.set("role", roleFilter);
       const res = await fetch(`/api/reports/monthly?${params.toString()}`);
       const data = await res.json();
       if (res.ok) {
@@ -2598,23 +2902,193 @@ function MonthlyReport() {
     }
   };
 
+  const renderUserCard = (rec: MonthlyReportRecord) => (
+    <ThemedCard key={rec.userId}>
+      <CardContent className="p-4">
+        <Collapsible
+          open={expandedUser === rec.userId}
+          onOpenChange={() =>
+            setExpandedUser(
+              expandedUser === rec.userId ? null : rec.userId
+            )
+          }
+        >
+          <CollapsibleTrigger className="w-full">
+            <div className="flex items-center justify-between">
+              <div className="text-left min-w-0">
+                <div className="font-semibold text-white">{rec.name}</div>
+                <div className="text-sm text-white/50">
+                  {rec.userId} &middot; {rec.class || "-"}
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="hidden sm:flex items-center gap-2 text-xs">
+                  <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400">
+                    P:{rec.summary.present}
+                  </span>
+                  <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400">
+                    A:{rec.summary.absent}
+                  </span>
+                  <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400">
+                    L:{rec.summary.leave}
+                  </span>
+                  <span className="px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">
+                    H:{rec.summary.holiday}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`h-4 w-4 text-white/50 transition-transform ${
+                    expandedUser === rec.userId ? "rotate-180" : ""
+                  }`}
+                />
+              </div>
+            </div>
+            <div className="flex sm:hidden items-center gap-2 text-xs mt-2">
+              <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400">
+                P:{rec.summary.present}
+              </span>
+              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400">
+                A:{rec.summary.absent}
+              </span>
+              <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400">
+                L:{rec.summary.leave}
+              </span>
+              <span className="px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">
+                H:{rec.summary.holiday}
+              </span>
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <Separator className="my-3 bg-white/10" />
+            {/* Subject Summary */}
+            {Object.keys(rec.subjectSummary).length > 0 && (
+              <div className="mb-4">
+                <div className="text-sm font-medium text-white/80 mb-2 flex items-center gap-1.5">
+                  <BookOpen className="h-3.5 w-3.5 text-[#2F2FE4]" /> Subject-wise Summary
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {Object.entries(rec.subjectSummary).map(
+                    ([subject, counts]) => (
+                      <div
+                        key={subject}
+                        className="text-xs bg-white/5 border border-white/5 rounded-xl p-3"
+                      >
+                        <div className="font-semibold text-white/80 mb-2">{subject}</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                            P:{counts.present}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
+                            A:{counts.absent}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+                            L:{counts.leave}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
+                            H:{counts.holiday}
+                          </span>
+                          {counts.noClass !== undefined && counts.noClass > 0 && (
+                            <span className="px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">
+                              NC:{counts.noClass}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+            {/* QR Logs */}
+            {rec.qrLogs && rec.qrLogs.length > 0 && (
+              <div className="mb-4">
+                <div className="text-sm font-medium text-white/80 mb-2 flex items-center gap-1.5">
+                  <ScanLine className="h-3.5 w-3.5 text-[#2F2FE4]" /> QR Logs
+                </div>
+                <ScrollArea className="max-h-32">
+                  <div className="space-y-1">
+                    {rec.qrLogs.map((log, i) => (
+                      <div key={i} className="flex items-center gap-3 text-xs text-white/50 bg-white/5 rounded-lg px-3 py-1.5">
+                        <span className="text-white/70">{log.date}</span>
+                        <span>In: {formatTimeStr(log.checkIn)}</span>
+                        <span>Out: {formatTimeStr(log.checkOut)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+            {/* Daily Breakdown */}
+            <div>
+              <div className="text-sm font-medium text-white/80 mb-2">
+                Daily Breakdown
+              </div>
+              <ScrollArea className="max-h-48">
+                <div className="grid grid-cols-7 gap-1.5">
+                  {Object.entries(rec.dailyStatus)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([dateStr, info]) => {
+                      const day = dateStr.split("-")[2];
+                      const statusColorMap: Record<string, string> = {
+                        PRESENT: "bg-green-500/30 text-green-400 border-green-500/20",
+                        ABSENT: "bg-red-500/30 text-red-400 border-red-500/20",
+                        LEAVE: "bg-amber-500/30 text-amber-400 border-amber-500/20",
+                        HOLIDAY: "bg-purple-500/30 text-purple-400 border-purple-500/20",
+                        NO_CLASS: "bg-gray-500/30 text-gray-400 border-gray-500/20",
+                      };
+                      return (
+                        <div
+                          key={dateStr}
+                          className={`text-center rounded-lg p-1.5 text-xs border ${
+                            statusColorMap[info.status] || "bg-white/5 text-white/40 border-white/5"
+                          }`}
+                          title={`${dateStr}: ${info.status}${
+                            info.checkIn ? ` (In: ${formatTimeStr(info.checkIn)})` : ""
+                          }${
+                            info.checkOut ? ` (Out: ${formatTimeStr(info.checkOut)})` : ""
+                          }`}
+                        >
+                          <div className="font-semibold">{day}</div>
+                          <div className="text-[10px] opacity-80">
+                            {info.status === "PRESENT" ? "P" :
+                             info.status === "ABSENT" ? "A" :
+                             info.status === "LEAVE" ? "L" :
+                             info.status === "HOLIDAY" ? "H" :
+                             info.status === "NO_CLASS" ? "NC" : "?"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </ScrollArea>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </CardContent>
+    </ThemedCard>
+  );
+
+  const allStudents = report?.studentReport ?? [];
+  const allTeachers = report?.teacherReport ?? [];
+
   return (
     <div className="space-y-4">
-      <Card>
+      <ThemedCard>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-end">
             <div className="space-y-2 flex-1">
-              <Label>Month (YYYY-MM)</Label>
+              <Label className="text-white/60">Month (YYYY-MM)</Label>
               <Input
                 type="month"
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
+                className="bg-white/5 border-white/10 text-white focus:border-[#2F2FE4]"
               />
             </div>
             <div className="space-y-2">
-              <Label>Class</Label>
+              <Label className="text-white/60">Class</Label>
               <Select value={className} onValueChange={setClassName}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -2627,169 +3101,80 @@ function MonthlyReport() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={generate} disabled={loading}>
+            <div className="space-y-2">
+              <Label className="text-white/60">Role</Label>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All</SelectItem>
+                  <SelectItem value="STUDENT">Student</SelectItem>
+                  <SelectItem value="TEACHER">Teacher</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={generate}
+              disabled={loading}
+              className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl shadow-lg shadow-[#2F2FE4]/25 min-h-[44px]"
+            >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <FileBarChart className="h-4 w-4" />
               )}
-              <span className="ml-1">Generate</span>
+              <span className="ml-1.5">Generate</span>
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </ThemedCard>
 
-      {report && report.report.length > 0 && (
-        <div className="space-y-3">
-          {report.report.map((rec) => (
-            <Card key={rec.userId}>
-              <CardContent className="p-4">
-                <Collapsible
-                  open={expandedUser === rec.userId}
-                  onOpenChange={() =>
-                    setExpandedUser(
-                      expandedUser === rec.userId ? null : rec.userId
-                    )
-                  }
-                >
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between">
-                      <div className="text-left min-w-0">
-                        <div className="font-medium">{rec.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {rec.userId} &middot; {rec.class || "-"}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="hidden sm:flex items-center gap-3 text-sm">
-                          <span className="text-green-600">
-                            P:{rec.summary.present}
-                          </span>
-                          <span className="text-red-600">
-                            A:{rec.summary.absent}
-                          </span>
-                          <span className="text-yellow-600">
-                            L:{rec.summary.leave}
-                          </span>
-                          <span className="text-blue-600">
-                            H:{rec.summary.holiday}
-                          </span>
-                        </div>
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform ${
-                            expandedUser === rec.userId ? "rotate-180" : ""
-                          }`}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex sm:hidden items-center gap-3 text-sm mt-1">
-                      <span className="text-green-600">
-                        P:{rec.summary.present}
-                      </span>
-                      <span className="text-red-600">
-                        A:{rec.summary.absent}
-                      </span>
-                      <span className="text-yellow-600">
-                        L:{rec.summary.leave}
-                      </span>
-                      <span className="text-blue-600">
-                        H:{rec.summary.holiday}
-                      </span>
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <Separator className="my-3" />
-                    {/* Subject Summary */}
-                    {Object.keys(rec.subjectSummary).length > 0 && (
-                      <div className="mb-3">
-                        <div className="text-sm font-medium mb-2">
-                          Subject-wise Summary
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {Object.entries(rec.subjectSummary).map(
-                            ([subject, counts]) => (
-                              <div
-                                key={subject}
-                                className="text-xs bg-muted rounded-md p-2"
-                              >
-                                <div className="font-medium mb-1">{subject}</div>
-                                <div className="flex gap-2">
-                                  <span className="text-green-600">
-                                    P:{counts.present}
-                                  </span>
-                                  <span className="text-red-600">
-                                    A:{counts.absent}
-                                  </span>
-                                  <span className="text-yellow-600">
-                                    L:{counts.leave}
-                                  </span>
-                                  <span className="text-blue-600">
-                                    H:{counts.holiday}
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {/* Daily Breakdown */}
-                    <div>
-                      <div className="text-sm font-medium mb-2">
-                        Daily Breakdown
-                      </div>
-                      <ScrollArea className="max-h-48">
-                        <div className="grid grid-cols-7 gap-1">
-                          {Object.entries(rec.dailyStatus)
-                            .sort(([a], [b]) => a.localeCompare(b))
-                            .map(([dateStr, info]) => {
-                              const day = dateStr.split("-")[2];
-                              const colorMap: Record<string, string> = {
-                                PRESENT: "bg-green-100 text-green-800",
-                                ABSENT: "bg-red-100 text-red-800",
-                                LEAVE: "bg-yellow-100 text-yellow-800",
-                                HOLIDAY: "bg-blue-100 text-blue-800",
-                              };
-                              return (
-                                <div
-                                  key={dateStr}
-                                  className={`text-center rounded p-1 text-xs ${
-                                    colorMap[info.status] || "bg-muted"
-                                  }`}
-                                  title={`${dateStr}: ${info.status}${
-                                    info.checkIn
-                                      ? ` (In: ${formatTimeStr(info.checkIn)})`
-                                      : ""
-                                  }${
-                                    info.checkOut
-                                      ? ` (Out: ${formatTimeStr(info.checkOut)})`
-                                      : ""
-                                  }`}
-                                >
-                                  <div className="font-medium">{day}</div>
-                                  <div className="text-[10px]">
-                                    {info.status.charAt(0)}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </ScrollArea>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {report && (allStudents.length > 0 || allTeachers.length > 0) && (
+        <Tabs value={reportSection} onValueChange={setReportSection}>
+          <TabsList className="bg-white/5 border border-white/10">
+            {allStudents.length > 0 && (
+              <TabsTrigger
+                value="students"
+                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg gap-1.5"
+              >
+                <GraduationCap className="h-3.5 w-3.5" /> Students ({allStudents.length})
+              </TabsTrigger>
+            )}
+            {allTeachers.length > 0 && (
+              <TabsTrigger
+                value="teachers"
+                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg gap-1.5"
+              >
+                <Users className="h-3.5 w-3.5" /> Teachers ({allTeachers.length})
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {allStudents.length > 0 && (
+            <TabsContent value="students">
+              <div className="space-y-3">
+                {allStudents.map(renderUserCard)}
+              </div>
+            </TabsContent>
+          )}
+
+          {allTeachers.length > 0 && (
+            <TabsContent value="teachers">
+              <div className="space-y-3">
+                {allTeachers.map(renderUserCard)}
+              </div>
+            </TabsContent>
+          )}
+        </Tabs>
       )}
 
-      {report && report.report.length === 0 && (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
+      {report && allStudents.length === 0 && allTeachers.length === 0 && (
+        <ThemedCard>
+          <CardContent className="py-12 text-center text-white/40">
             No data found for the selected month/class.
           </CardContent>
-        </Card>
+        </ThemedCard>
       )}
     </div>
   );
@@ -2872,23 +3257,28 @@ function SettingsTab() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="h-8 w-8 animate-spin text-white/40" />
       </div>
     );
   }
 
   return (
     <div className="max-w-lg space-y-6">
-      <Card>
+      <ThemedCard>
         <CardHeader>
-          <CardTitle className="text-base">Settings</CardTitle>
+          <CardTitle
+            className="text-base text-white flex items-center gap-2"
+            style={{ background: "transparent" }}
+          >
+            <Settings className="h-4 w-4 text-[#2F2FE4]" /> Settings
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Timezone */}
           <div className="space-y-2">
-            <Label>Timezone</Label>
+            <Label className="text-white/70">Timezone</Label>
             <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full bg-white/5 border-white/10 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -2903,9 +3293,9 @@ function SettingsTab() {
 
           {/* Time Format */}
           <div className="space-y-2">
-            <Label>Time Format</Label>
+            <Label className="text-white/70">Time Format</Label>
             <Select value={timeFormat} onValueChange={setTimeFormat}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full bg-white/5 border-white/10 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -2915,29 +3305,30 @@ function SettingsTab() {
             </Select>
           </div>
 
-          <Separator />
+          <Separator className="bg-white/10" />
 
           {/* Telegram Bot Token */}
           <div className="space-y-2">
-            <Label htmlFor="telegram-token">Telegram Bot Token</Label>
+            <Label className="text-white/70" htmlFor="telegram-token">Telegram Bot Token</Label>
             <Input
               id="telegram-token"
               value={telegramBotToken}
               onChange={(e) => setTelegramBotToken(e.target.value)}
               placeholder="Enter Telegram bot token"
+              className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-white/40">
               Used for sending attendance notifications.
             </p>
           </div>
 
-          <Separator />
+          <Separator className="bg-white/10" />
 
           {/* Daily Report Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <Label>Daily Report</Label>
-              <p className="text-xs text-muted-foreground">
+              <Label className="text-white/70">Daily Report</Label>
+              <p className="text-xs text-white/40">
                 Send daily attendance report via Telegram
               </p>
             </div>
@@ -2950,24 +3341,29 @@ function SettingsTab() {
           {/* Daily Report Time */}
           {dailyReportEnabled && (
             <div className="space-y-2">
-              <Label htmlFor="report-time">Daily Report Time</Label>
+              <Label className="text-white/70" htmlFor="report-time">Daily Report Time</Label>
               <Input
                 id="report-time"
                 type="time"
                 value={dailyReportTime}
                 onChange={(e) => setDailyReportTime(e.target.value)}
+                className="bg-white/5 border-white/10 text-white focus:border-[#2F2FE4]"
               />
             </div>
           )}
 
-          <Separator />
+          <Separator className="bg-white/10" />
 
-          <Button onClick={handleSave} disabled={saving} className="w-full">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl shadow-lg shadow-[#2F2FE4]/25 min-h-[44px]"
+          >
             {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
             Save Settings
           </Button>
         </CardContent>
-      </Card>
+      </ThemedCard>
     </div>
   );
 }

@@ -12,6 +12,9 @@ import {
   Plus,
   CalendarDays,
   BarChart3,
+  UserCircle,
+  Sparkles,
+  BookOpen,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -51,7 +54,29 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { SUBJECT_ATTENDANCE_STATUS } from "@/lib/constants";
 
+// ─── Color Theme ───────────────────────────────────────
+const THEME = {
+  primary: "#2F2FE4",
+  secondary: "#162E93",
+  accent: "#1A1953",
+  dark: "#080616",
+} as const;
+
+// ─── Status Badge Color Map ────────────────────────────
+const STATUS_COLORS: Record<string, string> = {
+  PRESENT: "bg-emerald-500 text-white",
+  ABSENT: "bg-red-500 text-white",
+  LEAVE: "bg-amber-500 text-white",
+  HOLIDAY: "bg-purple-500 text-white",
+  NO_CLASS: "bg-gray-400 text-white",
+  PENDING: "bg-amber-500 text-white",
+  APPROVED: "bg-emerald-500 text-white",
+  REJECTED: "bg-red-500 text-white",
+};
+
+// ─── Types ─────────────────────────────────────────────
 interface StudentDashboardProps {
   user: {
     id: string;
@@ -65,7 +90,6 @@ interface StudentDashboardProps {
   };
 }
 
-// ---------- Attendance Record Type ----------
 interface AttendanceRecord {
   id: string;
   userId: string;
@@ -76,7 +100,6 @@ interface AttendanceRecord {
   user?: { name: string; userId: string; role: string; class: string | null };
 }
 
-// ---------- Subject Attendance Record Type ----------
 interface SubjectAttendanceRecord {
   id: string;
   userId: string;
@@ -87,7 +110,6 @@ interface SubjectAttendanceRecord {
   user?: { name: string; userId: string; role: string; class: string | null };
 }
 
-// ---------- Leave Request Type ----------
 interface LeaveRequest {
   id: string;
   userId: string;
@@ -99,7 +121,6 @@ interface LeaveRequest {
   user?: { name: string; userId: string; role: string; class: string | null };
 }
 
-// ---------- Holiday Type ----------
 interface Holiday {
   id: string;
   date: string;
@@ -107,10 +128,11 @@ interface Holiday {
   classes: string[] | string;
 }
 
+// ─── Component ─────────────────────────────────────────
 export function StudentDashboard({ user }: StudentDashboardProps) {
   const logout = useAuthStore((s) => s.logout);
 
-  // ---- Attendance tab state ----
+  // ── Attendance tab state ──
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attStartDate, setAttStartDate] = useState(() => {
@@ -120,12 +142,12 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
   });
   const [attEndDate, setAttEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
-  // ---- Subject attendance state ----
+  // ── Subject attendance state ──
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [subjectRecords, setSubjectRecords] = useState<SubjectAttendanceRecord[]>([]);
   const [subjectLoading, setSubjectLoading] = useState(false);
 
-  // ---- Monthly summary state ----
+  // ── Monthly summary state ──
   const [summaryMonth, setSummaryMonth] = useState(() => format(new Date(), "yyyy-MM"));
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryData, setSummaryData] = useState<{
@@ -135,7 +157,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     holiday: number;
   }>({ present: 0, absent: 0, leave: 0, holiday: 0 });
 
-  // ---- Leave tab state ----
+  // ── Leave tab state ──
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [leaveLoading, setLeaveLoading] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
@@ -144,18 +166,18 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
   const [leaveRemark, setLeaveRemark] = useState("");
   const [leaveSubmitting, setLeaveSubmitting] = useState(false);
 
-  // ---- Holidays tab state ----
+  // ── Holidays tab state ──
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [holidaysLoading, setHolidaysLoading] = useState(false);
 
-  // ---- Date picker open states ----
+  // ── Date picker open states ──
   const [attStartPickerOpen, setAttStartPickerOpen] = useState(false);
   const [attEndPickerOpen, setAttEndPickerOpen] = useState(false);
   const [subjectDatePickerOpen, setSubjectDatePickerOpen] = useState(false);
   const [leaveFromPickerOpen, setLeaveFromPickerOpen] = useState(false);
   const [leaveToPickerOpen, setLeaveToPickerOpen] = useState(false);
 
-  // ---- Fetch attendance records ----
+  // ── Fetch attendance records ──
   const fetchAttendance = useCallback(async () => {
     setAttendanceLoading(true);
     try {
@@ -176,7 +198,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   }, [user.userId, attStartDate, attEndDate]);
 
-  // ---- Fetch subject attendance for selected date ----
+  // ── Fetch subject attendance for selected date ──
   const fetchSubjectAttendance = useCallback(async () => {
     setSubjectLoading(true);
     try {
@@ -194,7 +216,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   }, [user.userId, selectedDate]);
 
-  // ---- Fetch monthly summary ----
+  // ── Fetch monthly summary ──
   const fetchSummary = useCallback(async () => {
     setSummaryLoading(true);
     try {
@@ -202,7 +224,6 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
       const [year, mon] = summaryMonth.split("-").map(Number);
       const nextMonth = mon === 12 ? 1 : mon + 1;
       const nextYear = mon === 12 ? year + 1 : year;
-      const endDate = `${nextYear}-${String(nextMonth).padStart(2, "0")}-01`;
 
       const params = new URLSearchParams({
         userId: user.userId,
@@ -229,7 +250,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   }, [user.userId, summaryMonth]);
 
-  // ---- Fetch leave requests ----
+  // ── Fetch leave requests ──
   const fetchLeaves = useCallback(async () => {
     setLeaveLoading(true);
     try {
@@ -244,7 +265,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   }, [user.userId]);
 
-  // ---- Fetch holidays ----
+  // ── Fetch holidays ──
   const fetchHolidays = useCallback(async () => {
     setHolidaysLoading(true);
     try {
@@ -263,28 +284,14 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   }, [user.class]);
 
-  // ---- Effects ----
-  useEffect(() => {
-    fetchAttendance();
-  }, [fetchAttendance]);
+  // ── Effects ──
+  useEffect(() => { fetchAttendance(); }, [fetchAttendance]);
+  useEffect(() => { fetchSubjectAttendance(); }, [fetchSubjectAttendance]);
+  useEffect(() => { fetchSummary(); }, [fetchSummary]);
+  useEffect(() => { fetchLeaves(); }, [fetchLeaves]);
+  useEffect(() => { fetchHolidays(); }, [fetchHolidays]);
 
-  useEffect(() => {
-    fetchSubjectAttendance();
-  }, [fetchSubjectAttendance]);
-
-  useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
-
-  useEffect(() => {
-    fetchLeaves();
-  }, [fetchLeaves]);
-
-  useEffect(() => {
-    fetchHolidays();
-  }, [fetchHolidays]);
-
-  // ---- Apply leave ----
+  // ── Apply leave ──
   const handleApplyLeave = async () => {
     if (!leaveFromDate || !leaveToDate) {
       toast.error("Please select from and to dates");
@@ -325,27 +332,22 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   };
 
-  // ---- Status badge helper ----
+  // ── Status badge helper ──
   const statusBadge = (status: string) => {
-    const map: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; className: string }> = {
-      PRESENT: { variant: "default", className: "bg-green-600 hover:bg-green-700 text-white" },
-      ABSENT: { variant: "destructive", className: "" },
-      LEAVE: { variant: "secondary", className: "bg-yellow-500 hover:bg-yellow-600 text-white" },
-      HOLIDAY: { variant: "secondary", className: "bg-purple-500 hover:bg-purple-600 text-white" },
-      NO_CLASS: { variant: "outline", className: "" },
-      PENDING: { variant: "secondary", className: "bg-yellow-500 hover:bg-yellow-600 text-white" },
-      APPROVED: { variant: "default", className: "bg-green-600 hover:bg-green-700 text-white" },
-      REJECTED: { variant: "destructive", className: "" },
-    };
-    const config = map[status] || { variant: "outline" as const, className: "" };
+    const colorClass = STATUS_COLORS[status] || "bg-gray-300 text-gray-800";
     return (
-      <Badge variant={config.variant} className={cn("text-xs", config.className)}>
-        {status}
-      </Badge>
+      <span
+        className={cn(
+          "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+          colorClass
+        )}
+      >
+        {status.replace(/_/g, " ")}
+      </span>
     );
   };
 
-  // ---- Format check-in/out time ----
+  // ── Format check-in/out time ──
   const formatCheckTime = (isoString: string | null) => {
     if (!isoString) return "—";
     try {
@@ -355,7 +357,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   };
 
-  // ---- Format date display ----
+  // ── Format date display ──
   const formatDateDisplay = (dateStr: string) => {
     try {
       return format(new Date(dateStr), "dd MMM yyyy");
@@ -364,7 +366,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   };
 
-  // ---- Parse holiday classes ----
+  // ── Parse holiday classes ──
   const parseHolidayClasses = (classes: string[] | string): string[] => {
     if (Array.isArray(classes)) return classes;
     try {
@@ -374,69 +376,114 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }
   };
 
+  // ── Summary percentage helper ──
+  const total = summaryData.present + summaryData.absent + summaryData.leave + summaryData.holiday;
+  const presentPercent = total > 0 ? Math.round((summaryData.present / total) * 100) : 0;
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white dark:bg-gray-900 border-b shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3 sm:px-6">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: THEME.dark }}>
+      {/* ════════════ HEADER ════════════ */}
+      <header
+        className="sticky top-0 z-40 shadow-xl"
+        style={{
+          background: `linear-gradient(135deg, ${THEME.accent} 0%, ${THEME.secondary} 50%, ${THEME.primary} 100%)`,
+        }}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-9 rounded-lg bg-primary text-primary-foreground font-bold text-sm">
-              SA
+            <div className="flex items-center justify-center size-11 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20">
+              <Sparkles className="size-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold leading-tight">Sankalp Attendance</h1>
-              <p className="text-xs text-muted-foreground">
+              <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
+                Sankalp Attendance
+              </h1>
+              <p className="text-xs text-blue-200 flex items-center gap-1">
+                <UserCircle className="size-3" />
                 Welcome, {user.name}
                 {user.class && (
-                  <span className="ml-1 text-muted-foreground">({user.class})</span>
+                  <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/15 text-[10px] font-medium">
+                    {user.class}
+                  </span>
                 )}
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={logout} className="gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="gap-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
+          >
             <LogOut className="size-4" />
             <span className="hidden sm:inline">Logout</span>
           </Button>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 sm:px-6 sm:py-6">
+      {/* ════════════ MAIN CONTENT ════════════ */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-5 sm:px-6 sm:py-6">
         <Tabs defaultValue="attendance" className="w-full">
-          <TabsList className="w-full flex flex-wrap mb-4">
-            <TabsTrigger value="attendance" className="flex-1 min-w-0 gap-1.5">
+          {/* ── Tab Navigation ── */}
+          <TabsList
+            className="w-full flex flex-wrap mb-5 h-auto p-1 rounded-xl"
+            style={{ backgroundColor: THEME.accent }}
+          >
+            <TabsTrigger
+              value="attendance"
+              className="flex-1 min-w-0 gap-1.5 py-2.5 rounded-lg text-sm font-medium text-blue-200 transition-all data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               <ClipboardCheck className="size-4" />
               <span>Attendance</span>
             </TabsTrigger>
-            <TabsTrigger value="leave" className="flex-1 min-w-0 gap-1.5">
+            <TabsTrigger
+              value="leave"
+              className="flex-1 min-w-0 gap-1.5 py-2.5 rounded-lg text-sm font-medium text-blue-200 transition-all data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               <Plane className="size-4" />
               <span>Leave</span>
             </TabsTrigger>
-            <TabsTrigger value="holidays" className="flex-1 min-w-0 gap-1.5">
+            <TabsTrigger
+              value="holidays"
+              className="flex-1 min-w-0 gap-1.5 py-2.5 rounded-lg text-sm font-medium text-blue-200 transition-all data-[state=active]:text-white data-[state=active]:shadow-lg"
+            >
               <PartyPopper className="size-4" />
               <span className="hidden sm:inline">Holidays</span>
-              <span className="sm:hidden">Hol.</span>
+              <span className="sm:hidden text-xs">Hol.</span>
             </TabsTrigger>
           </TabsList>
 
-          {/* ===== ATTENDANCE TAB ===== */}
+          {/* ════════════ ATTENDANCE TAB ════════════ */}
           <TabsContent value="attendance">
             <div className="space-y-6">
-              {/* Attendance History Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>My Attendance History</CardTitle>
-                  <CardDescription>View your check-in/check-out records</CardDescription>
+              {/* ── Attendance History Card ── */}
+              <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
+                <CardHeader
+                  className="pb-4"
+                  style={{
+                    background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
+                  }}
+                >
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <ClipboardCheck className="size-5" />
+                    My Attendance History
+                  </CardTitle>
+                  <CardDescription className="text-blue-200">
+                    View your check-in / check-out records
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 bg-white">
                   {/* Date range filter */}
-                  <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                  <div className="flex flex-col sm:flex-row gap-3 mb-5">
                     <div className="flex items-center gap-2 flex-1">
-                      <Label htmlFor="att-start" className="text-sm whitespace-nowrap">From</Label>
+                      <Label className="text-sm whitespace-nowrap font-medium">From</Label>
                       <Popover open={attStartPickerOpen} onOpenChange={setAttStartPickerOpen}>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal" id="att-start">
-                            <CalendarDays className="size-4 mr-2" />
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal rounded-xl"
+                          >
+                            <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
                             {attStartDate ? formatDateDisplay(attStartDate) : "Pick a date"}
                           </Button>
                         </PopoverTrigger>
@@ -455,11 +502,14 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                       </Popover>
                     </div>
                     <div className="flex items-center gap-2 flex-1">
-                      <Label htmlFor="att-end" className="text-sm whitespace-nowrap">To</Label>
+                      <Label className="text-sm whitespace-nowrap font-medium">To</Label>
                       <Popover open={attEndPickerOpen} onOpenChange={setAttEndPickerOpen}>
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left font-normal" id="att-end">
-                            <CalendarDays className="size-4 mr-2" />
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal rounded-xl"
+                          >
+                            <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
                             {attEndDate ? formatDateDisplay(attEndDate) : "Pick a date"}
                           </Button>
                         </PopoverTrigger>
@@ -477,7 +527,11 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                         </PopoverContent>
                       </Popover>
                     </div>
-                    <Button onClick={fetchAttendance} variant="secondary" size="default" className="gap-2">
+                    <Button
+                      onClick={fetchAttendance}
+                      className="gap-2 rounded-xl shadow-md text-white min-w-[100px]"
+                      style={{ backgroundColor: THEME.primary }}
+                    >
                       <Loader2 className={cn("size-4", attendanceLoading && "animate-spin")} />
                       Refresh
                     </Button>
@@ -486,54 +540,69 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                   {/* Attendance table */}
                   {attendanceLoading ? (
                     <div className="flex items-center justify-center py-12">
-                      <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                      <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                      <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
+                      <span className="ml-2 text-sm text-gray-500">Loading...</span>
                     </div>
                   ) : attendanceRecords.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <ClipboardCheck className="size-10 mx-auto mb-2 opacity-40" />
-                      <p>No attendance records found for this period</p>
+                    <div className="text-center py-12 text-gray-400">
+                      <ClipboardCheck className="size-12 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">No attendance records found for this period</p>
                     </div>
                   ) : (
-                    <div className="rounded-md border max-h-[400px] overflow-y-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Check-In</TableHead>
-                            <TableHead>Check-Out</TableHead>
-                            <TableHead>Status</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {attendanceRecords.map((record) => (
-                            <TableRow key={record.id}>
-                              <TableCell className="font-medium">
-                                {formatDateDisplay(record.date)}
-                              </TableCell>
-                              <TableCell>{formatCheckTime(record.checkIn)}</TableCell>
-                              <TableCell>{formatCheckTime(record.checkOut)}</TableCell>
-                              <TableCell>{statusBadge(record.status)}</TableCell>
+                    <div className="rounded-xl border overflow-hidden">
+                      <div className="max-h-[400px] overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50 hover:bg-gray-50">
+                              <TableHead className="font-semibold">Date</TableHead>
+                              <TableHead className="font-semibold">Check-In</TableHead>
+                              <TableHead className="font-semibold">Check-Out</TableHead>
+                              <TableHead className="font-semibold">Status</TableHead>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                          </TableHeader>
+                          <TableBody>
+                            {attendanceRecords.map((record) => (
+                              <TableRow key={record.id} className="hover:bg-blue-50/50 transition-colors">
+                                <TableCell className="font-medium">
+                                  {formatDateDisplay(record.date)}
+                                </TableCell>
+                                <TableCell>{formatCheckTime(record.checkIn)}</TableCell>
+                                <TableCell>{formatCheckTime(record.checkOut)}</TableCell>
+                                <TableCell>{statusBadge(record.status)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Subject-wise Attendance Card */}
-              <Card>
-                <CardHeader>
+              {/* ── Subject-wise Attendance Card ── */}
+              <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
+                <CardHeader
+                  className="pb-4"
+                  style={{
+                    background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
+                  }}
+                >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <CardTitle>Subject-wise Attendance</CardTitle>
-                      <CardDescription>Select a date to see subject attendance</CardDescription>
+                      <CardTitle className="text-white flex items-center gap-2">
+                        <BookOpen className="size-5" />
+                        Subject-wise Attendance
+                      </CardTitle>
+                      <CardDescription className="text-blue-200">
+                        Select a date to see subject attendance
+                      </CardDescription>
                     </div>
                     <Popover open={subjectDatePickerOpen} onOpenChange={setSubjectDatePickerOpen}>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto justify-start text-left font-normal gap-2">
+                        <Button
+                          variant="outline"
+                          className="w-full sm:w-auto justify-start text-left font-normal gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white rounded-xl"
+                        >
                           <CalendarDays className="size-4" />
                           {selectedDate ? formatDateDisplay(selectedDate) : "Pick a date"}
                         </Button>
@@ -553,29 +622,29 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                     </Popover>
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 bg-white">
                   {subjectLoading ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                      <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                      <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
+                      <span className="ml-2 text-sm text-gray-500">Loading...</span>
                     </div>
                   ) : subjectRecords.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <ClipboardCheck className="size-8 mx-auto mb-2 opacity-40" />
-                      <p>No subject attendance records for {formatDateDisplay(selectedDate)}</p>
+                    <div className="text-center py-8 text-gray-400">
+                      <BookOpen className="size-10 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">No subject attendance records for {formatDateDisplay(selectedDate)}</p>
                     </div>
                   ) : (
-                    <div className="rounded-md border">
+                    <div className="rounded-xl border overflow-hidden">
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Subject</TableHead>
-                            <TableHead>Status</TableHead>
+                          <TableRow className="bg-gray-50 hover:bg-gray-50">
+                            <TableHead className="font-semibold">Subject</TableHead>
+                            <TableHead className="font-semibold">Status</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {subjectRecords.map((record) => (
-                            <TableRow key={record.id}>
+                            <TableRow key={record.id} className="hover:bg-blue-50/50 transition-colors">
                               <TableCell className="font-medium">{record.subject}</TableCell>
                               <TableCell>{statusBadge(record.status)}</TableCell>
                             </TableRow>
@@ -587,86 +656,138 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 </CardContent>
               </Card>
 
-              {/* Monthly Summary Card */}
-              <Card>
-                <CardHeader>
+              {/* ── Monthly Summary Card ── */}
+              <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
+                <CardHeader
+                  className="pb-4"
+                  style={{
+                    background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
+                  }}
+                >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
+                      <CardTitle className="text-white flex items-center gap-2">
                         <BarChart3 className="size-5" />
                         Monthly Summary
                       </CardTitle>
-                      <CardDescription>Attendance breakdown for the selected month</CardDescription>
+                      <CardDescription className="text-blue-200">
+                        Attendance breakdown for the selected month
+                      </CardDescription>
                     </div>
                     <Input
                       type="month"
                       value={summaryMonth}
                       onChange={(e) => setSummaryMonth(e.target.value)}
-                      className="w-full sm:w-44"
+                      className="w-full sm:w-44 rounded-xl bg-white/10 border-white/20 text-white placeholder:text-blue-300 [&::-webkit-calendar-picker-indicator]:invert"
                     />
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6 bg-white">
                   {summaryLoading ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                      <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                      <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
+                      <span className="ml-2 text-sm text-gray-500">Loading...</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      <div className="rounded-lg border p-4 text-center">
-                        <p className="text-3xl font-bold text-green-600">{summaryData.present}</p>
-                        <p className="text-sm text-muted-foreground mt-1">Present</p>
+                    <>
+                      {/* Percentage bar */}
+                      {total > 0 && (
+                        <div className="mb-5">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-gray-700">Attendance Rate</span>
+                            <span
+                              className="text-lg font-bold"
+                              style={{ color: THEME.primary }}
+                            >
+                              {presentPercent}%
+                            </span>
+                          </div>
+                          <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${presentPercent}%`,
+                                background: `linear-gradient(90deg, ${THEME.secondary}, ${THEME.primary})`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="rounded-xl border-2 border-emerald-100 bg-emerald-50/50 p-4 text-center">
+                          <p className="text-3xl font-bold text-emerald-600">{summaryData.present}</p>
+                          <p className="text-sm text-emerald-700/70 mt-1 font-medium">Present</p>
+                        </div>
+                        <div className="rounded-xl border-2 border-red-100 bg-red-50/50 p-4 text-center">
+                          <p className="text-3xl font-bold text-red-600">{summaryData.absent}</p>
+                          <p className="text-sm text-red-700/70 mt-1 font-medium">Absent</p>
+                        </div>
+                        <div className="rounded-xl border-2 border-amber-100 bg-amber-50/50 p-4 text-center">
+                          <p className="text-3xl font-bold text-amber-600">{summaryData.leave}</p>
+                          <p className="text-sm text-amber-700/70 mt-1 font-medium">Leave</p>
+                        </div>
+                        <div className="rounded-xl border-2 border-purple-100 bg-purple-50/50 p-4 text-center">
+                          <p className="text-3xl font-bold text-purple-600">{summaryData.holiday}</p>
+                          <p className="text-sm text-purple-700/70 mt-1 font-medium">Holiday</p>
+                        </div>
                       </div>
-                      <div className="rounded-lg border p-4 text-center">
-                        <p className="text-3xl font-bold text-red-600">{summaryData.absent}</p>
-                        <p className="text-sm text-muted-foreground mt-1">Absent</p>
-                      </div>
-                      <div className="rounded-lg border p-4 text-center">
-                        <p className="text-3xl font-bold text-yellow-600">{summaryData.leave}</p>
-                        <p className="text-sm text-muted-foreground mt-1">Leave</p>
-                      </div>
-                      <div className="rounded-lg border p-4 text-center">
-                        <p className="text-3xl font-bold text-purple-600">{summaryData.holiday}</p>
-                        <p className="text-sm text-muted-foreground mt-1">Holiday</p>
-                      </div>
-                    </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          {/* ===== LEAVE TAB ===== */}
+          {/* ════════════ LEAVE TAB ════════════ */}
           <TabsContent value="leave">
-            <Card>
-              <CardHeader>
+            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
+              <CardHeader
+                className="pb-4"
+                style={{
+                  background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
+                }}
+              >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <CardTitle>My Leave Requests</CardTitle>
-                    <CardDescription>View and apply for leave</CardDescription>
+                    <CardTitle className="text-white flex items-center gap-2">
+                      <Plane className="size-5" />
+                      My Leave Requests
+                    </CardTitle>
+                    <CardDescription className="text-blue-200">
+                      View and apply for leave
+                    </CardDescription>
                   </div>
                   <Dialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button className="gap-2">
+                      <Button
+                        className="gap-2 rounded-xl shadow-lg text-white"
+                        style={{ backgroundColor: THEME.primary }}
+                      >
                         <Plus className="size-4" />
                         Apply Leave
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Apply for Leave</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Plane className="size-5" style={{ color: THEME.primary }} />
+                          Apply for Leave
+                        </DialogTitle>
                         <DialogDescription>
                           Select the date range and provide a remark for your leave request
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4 py-2">
                         <div className="space-y-2">
-                          <Label>From Date</Label>
+                          <Label className="font-medium">From Date</Label>
                           <Popover open={leaveFromPickerOpen} onOpenChange={setLeaveFromPickerOpen}>
                             <PopoverTrigger asChild>
-                              <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                <CalendarDays className="size-4 mr-2" />
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal rounded-xl"
+                              >
+                                <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
                                 {leaveFromDate ? format(leaveFromDate, "dd MMM yyyy") : "Pick a date"}
                               </Button>
                             </PopoverTrigger>
@@ -683,11 +804,14 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                           </Popover>
                         </div>
                         <div className="space-y-2">
-                          <Label>To Date</Label>
+                          <Label className="font-medium">To Date</Label>
                           <Popover open={leaveToPickerOpen} onOpenChange={setLeaveToPickerOpen}>
                             <PopoverTrigger asChild>
-                              <Button variant="outline" className="w-full justify-start text-left font-normal">
-                                <CalendarDays className="size-4 mr-2" />
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal rounded-xl"
+                              >
+                                <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
                                 {leaveToDate ? format(leaveToDate, "dd MMM yyyy") : "Pick a date"}
                               </Button>
                             </PopoverTrigger>
@@ -704,20 +828,30 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                           </Popover>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="leave-remark">Remark</Label>
+                          <Label htmlFor="leave-remark" className="font-medium">Remark</Label>
                           <Input
                             id="leave-remark"
                             placeholder="Reason for leave (optional)"
                             value={leaveRemark}
                             onChange={(e) => setLeaveRemark(e.target.value)}
+                            className="rounded-xl"
                           />
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button variant="outline" onClick={() => setLeaveDialogOpen(false)}>
+                        <Button
+                          variant="outline"
+                          onClick={() => setLeaveDialogOpen(false)}
+                          className="rounded-xl"
+                        >
                           Cancel
                         </Button>
-                        <Button onClick={handleApplyLeave} disabled={leaveSubmitting} className="gap-2">
+                        <Button
+                          onClick={handleApplyLeave}
+                          disabled={leaveSubmitting}
+                          className="gap-2 rounded-xl text-white"
+                          style={{ backgroundColor: THEME.primary }}
+                        >
                           {leaveSubmitting && <Loader2 className="size-4 animate-spin" />}
                           Submit
                         </Button>
@@ -726,103 +860,125 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                   </Dialog>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6 bg-white">
                 {leaveLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                    <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
+                    <span className="ml-2 text-sm text-gray-500">Loading...</span>
                   </div>
                 ) : leaveRequests.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Plane className="size-10 mx-auto mb-2 opacity-40" />
-                    <p>No leave requests found</p>
+                  <div className="text-center py-12 text-gray-400">
+                    <Plane className="size-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No leave requests found</p>
                   </div>
                 ) : (
-                  <div className="rounded-md border max-h-[500px] overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>From</TableHead>
-                          <TableHead>To</TableHead>
-                          <TableHead>Remark</TableHead>
-                          <TableHead>Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {leaveRequests.map((leave) => (
-                          <TableRow key={leave.id}>
-                            <TableCell className="font-medium">
-                              {formatDateDisplay(leave.fromDate)}
-                            </TableCell>
-                            <TableCell>{formatDateDisplay(leave.toDate)}</TableCell>
-                            <TableCell className="max-w-[200px] truncate">
-                              {leave.remark || "—"}
-                            </TableCell>
-                            <TableCell>{statusBadge(leave.status)}</TableCell>
+                  <div className="rounded-xl border overflow-hidden">
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-gray-50 hover:bg-gray-50">
+                            <TableHead className="font-semibold">From</TableHead>
+                            <TableHead className="font-semibold">To</TableHead>
+                            <TableHead className="font-semibold">Remark</TableHead>
+                            <TableHead className="font-semibold">Status</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {leaveRequests.map((leave) => (
+                            <TableRow key={leave.id} className="hover:bg-blue-50/50 transition-colors">
+                              <TableCell className="font-medium">
+                                {formatDateDisplay(leave.fromDate)}
+                              </TableCell>
+                              <TableCell>{formatDateDisplay(leave.toDate)}</TableCell>
+                              <TableCell className="max-w-[200px] truncate">
+                                {leave.remark || "—"}
+                              </TableCell>
+                              <TableCell>{statusBadge(leave.status)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* ===== HOLIDAYS TAB ===== */}
+          {/* ════════════ HOLIDAYS TAB ════════════ */}
           <TabsContent value="holidays">
-            <Card>
-              <CardHeader>
-                <CardTitle>Holidays</CardTitle>
-                <CardDescription>
+            <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
+              <CardHeader
+                className="pb-4"
+                style={{
+                  background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
+                }}
+              >
+                <CardTitle className="text-white flex items-center gap-2">
+                  <PartyPopper className="size-5" />
+                  Holidays
+                </CardTitle>
+                <CardDescription className="text-blue-200">
                   Holidays applicable to your class
-                  {user.class && <span className="ml-1 font-medium">({user.class})</span>}
+                  {user.class && (
+                    <span
+                      className="ml-1 px-1.5 py-0.5 rounded-md bg-white/15 text-[10px] font-medium text-white"
+                    >
+                      {user.class}
+                    </span>
+                  )}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 sm:p-6 bg-white">
                 {holidaysLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="size-6 animate-spin text-muted-foreground" />
-                    <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                    <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
+                    <span className="ml-2 text-sm text-gray-500">Loading...</span>
                   </div>
                 ) : holidays.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <PartyPopper className="size-10 mx-auto mb-2 opacity-40" />
-                    <p>No holidays found</p>
+                  <div className="text-center py-12 text-gray-400">
+                    <PartyPopper className="size-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No holidays found</p>
                   </div>
                 ) : (
-                  <div className="rounded-md border max-h-[500px] overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Remark</TableHead>
-                          <TableHead>Applicable Classes</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {holidays.map((holiday) => {
-                          const classes = parseHolidayClasses(holiday.classes);
-                          return (
-                            <TableRow key={holiday.id}>
-                              <TableCell className="font-medium">
-                                {formatDateDisplay(holiday.date)}
-                              </TableCell>
-                              <TableCell>{holiday.remark || "—"}</TableCell>
-                              <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {classes.map((cls) => (
-                                    <Badge key={cls} variant="outline" className="text-xs">
-                                      {cls}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                  <div className="rounded-xl border overflow-hidden">
+                    <div className="max-h-[500px] overflow-y-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-gray-50 hover:bg-gray-50">
+                            <TableHead className="font-semibold">Date</TableHead>
+                            <TableHead className="font-semibold">Remark</TableHead>
+                            <TableHead className="font-semibold">Applicable Classes</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {holidays.map((holiday) => {
+                            const classes = parseHolidayClasses(holiday.classes);
+                            return (
+                              <TableRow key={holiday.id} className="hover:bg-blue-50/50 transition-colors">
+                                <TableCell className="font-medium">
+                                  {formatDateDisplay(holiday.date)}
+                                </TableCell>
+                                <TableCell>{holiday.remark || "—"}</TableCell>
+                                <TableCell>
+                                  <div className="flex flex-wrap gap-1">
+                                    {classes.map((cls) => (
+                                      <span
+                                        key={cls}
+                                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
+                                        style={{ backgroundColor: THEME.secondary }}
+                                      >
+                                        {cls}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 )}
               </CardContent>

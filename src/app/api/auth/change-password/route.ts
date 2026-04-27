@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     await db.user.update({
       where: { userId },
-      data: { password: hashedNewPassword },
+      data: { password: hashedNewPassword, plainPassword: newPassword },
     });
 
     return NextResponse.json({ message: "Password changed successfully" });

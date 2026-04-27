@@ -8,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  name      String
-  role      String   // ADMIN, TEACHER, STUDENT
-  password  String
-  class     String?  // For students - e.g., "Class 9 CBSE"
-  subjects  String?  // JSON string of subjects array
-  chatId    String?  // Telegram chat ID
-  phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  name           String
+  role           String   // ADMIN, TEACHER, STUDENT
+  password       String
+  plainPassword  String?  // Stored for ID card display & admin reference
+  class          String?  // For students - e.g., "Class 9 CBSE"
+  subjects       String?  // JSON string of subjects array
+  chatId         String?  // Telegram chat ID
+  phone          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   attendance        Attendance[]
   subjectAttendance SubjectAttendance[]
