@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  name      String
+  role      String   // ADMIN, TEACHER, STUDENT
+  password  String
+  class     String?  // For students - e.g., "Class 9 CBSE"
+  subjects  String?  // JSON string of subjects array
+  chatId    String?  // Telegram chat ID
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attendance        Attendance[]
+  subjectAttendance SubjectAttendance[]
+  leaveRequests     LeaveRequest[]
+}
+
+model Attendance {
+  id         String    @id @default(cuid())
+  userId     String
+  date       String    // YYYY-MM-DD
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     String    // PRESENT, ABSENT, LEAVE, HOLIDAY
+  lastScanAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user       User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model SubjectAttendance {
+  id        String   @id @default(cuid())
+  userId    String
+  date      String   // YYYY-MM-DD
+  subject   String
+  status    String   // PRESENT, ABSENT, LEAVE, HOLIDAY, NO_CLASS
+  markedBy  String?  // userId of teacher who marked
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@unique([userId, date, subject])
+}
+
+model LeaveRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  fromDate  String   // YYYY-MM-DD
+  toDate    String   // YYYY-MM-DD
+  remark    String?
+  status    String   // PENDING, APPROVED, REJECTED
+  reviewedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [userId], onDelete: Cascade)
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  date      String   // YYYY-MM-DD
+  classes   String   // JSON array of class names or ["ALL"]
+  remark    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Settings {
+  id               String   @id @default(cuid())
+  timezone         String   @default("Asia/Kolkata")
+  timeFormat       String   @default("12h")
+  telegramBotToken  String?
+  dailyReportEnabled Boolean @default(false)
+  dailyReportTime  String   @default("21:00")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
