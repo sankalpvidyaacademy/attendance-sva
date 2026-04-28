@@ -41,6 +41,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip as TooltipRoot, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 import {
   LogOut,
@@ -74,6 +75,8 @@ import {
   BookOpen,
 } from "lucide-react";
 
+import jsPDF from "jspdf";
+
 import type { AuthUser } from "@/stores/auth-store";
 
 // ─── Color Theme Constants ──────────────────────────────────────────────────
@@ -83,6 +86,20 @@ const THEME = {
   secondary: "#162E93",
   accent: "#1A1953",
   dark: "#080616",
+} as const;
+
+const STUDENT_CARD = {
+  primary: "#2F2FE4",
+  secondary: "#162E93",
+  accent: "#1A1953",
+  headerGradient: ["#1A1953", "#2F2FE4"],
+} as const;
+
+const TEACHER_CARD = {
+  primary: "#DC2626",
+  secondary: "#991B1B",
+  accent: "#7F1D1D",
+  headerGradient: ["#7F1D1D", "#DC2626"],
 } as const;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -455,6 +472,445 @@ function getStatusBadge(status: string) {
       {status.replace("_", " ")}
     </Badge>
   );
+}
+
+// ─── PDF Generation Helpers ──────────────────────────────────────────────────
+
+const PDF_COLORS = {
+  headerBg: "#1A1953",
+  headerText: "#FFFFFF",
+  sectionHeader: "#2F2FE4",
+  bodyText: "#333333",
+  altRow: "#F5F5F5",
+  border: "#CCCCCC",
+  present: "#22C55E",
+  absent: "#EF4444",
+  leave: "#F59E0B",
+  holiday: "#A855F7",
+  noClass: "#9CA3AF",
+};
+
+function getStatusColor(status: string): string {
+  const map: Record<string, string> = {
+    PRESENT: PDF_COLORS.present,
+    ABSENT: PDF_COLORS.absent,
+    LEAVE: PDF_COLORS.leave,
+    HOLIDAY: PDF_COLORS.holiday,
+    NO_CLASS: PDF_COLORS.noClass,
+  };
+  return map[status] || PDF_COLORS.bodyText;
+}
+
+function drawTableHeader(
+  doc: jsPDF,
+  y: number,
+  headers: string[],
+  colWidths: number[],
+  startX: number
+): number {
+  const rowH = 8;
+  doc.setFillColor(PDF_COLORS.sectionHeader);
+  doc.rect(startX, y, colWidths.reduce((a, b) => a + b, 0), rowH, "F");
+  doc.setTextColor(PDF_COLORS.headerText);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  let x = startX + 2;
+  for (let i = 0; i < headers.length; i++) {
+    doc.text(headers[i], x, y + 5.5);
+    x += colWidths[i];
+  }
+  return y + rowH;
+}
+
+function drawTableRow(
+  doc: jsPDF,
+  y: number,
+  cells: string[],
+  colWidths: number[],
+  startX: number,
+  isAlt: boolean,
+  statusColumnIndex?: number
+): number {
+  const rowH = 7;
+  const tableW = colWidths.reduce((a, b) => a + b, 0);
+
+  if (y + rowH > doc.internal.pageSize.getHeight() - 20) {
+    doc.addPage();
+    y = 20;
+  }
+
+  if (isAlt) {
+    doc.setFillColor(PDF_COLORS.altRow);
+    doc.rect(startX, y, tableW, rowH, "F");
+  }
+
+  doc.setDrawColor(PDF_COLORS.border);
+  doc.rect(startX, y, tableW, rowH, "S");
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  let x = startX + 2;
+  for (let i = 0; i < cells.length; i++) {
+    if (statusColumnIndex !== undefined && i === statusColumnIndex) {
+      doc.setTextColor(getStatusColor(cells[i]));
+      doc.setFont("helvetica", "bold");
+    } else {
+      doc.setTextColor(PDF_COLORS.bodyText);
+      doc.setFont("helvetica", "normal");
+    }
+    const maxW = colWidths[i] - 4;
+    const text = doc.getTextDimensions ? cells[i] : cells[i];
+    doc.text(text.length > 30 ? text.substring(0, 28) + ".." : text, x, y + 5, {
+      maxWidth: maxW,
+    } as jsPDF.textOptions);
+    x += colWidths[i];
+  }
+
+  return y + rowH;
+}
+
+function checkPageSpace(doc: jsPDF, y: number, needed: number): number {
+  if (y + needed > doc.internal.pageSize.getHeight() - 25) {
+    doc.addPage();
+    return 20;
+  }
+  return y;
+}
+
+function generateDailyReportPDF(
+  report: DailyReportData,
+  dateStr: string,
+  className: string,
+  roleFilter: string
+) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  const contentW = pageW - margin * 2;
+
+  // ── Header ──
+  doc.setFillColor(PDF_COLORS.headerBg);
+  doc.rect(0, 0, pageW, 35, "F");
+  doc.setTextColor(PDF_COLORS.headerText);
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("Sankalp Vidya Academy", pageW / 2, 14, { align: "center" });
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "normal");
+  doc.text("Daily Attendance Report", pageW / 2, 23, { align: "center" });
+
+  // Formatted date
+  const d = new Date(dateStr + "T00:00:00");
+  const formattedDate = d.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  doc.setFontSize(10);
+  doc.text(formattedDate, pageW / 2, 31, { align: "center" });
+
+  let y = 42;
+
+  // ── Filters ──
+  doc.setTextColor(PDF_COLORS.sectionHeader);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Filters Applied", margin, y);
+  y += 6;
+  doc.setTextColor(PDF_COLORS.bodyText);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Class: ${className === "ALL" ? "All Classes" : className}`, margin, y);
+  y += 5;
+  doc.text(`Role: ${roleFilter === "ALL" ? "All" : roleFilter}`, margin, y);
+  y += 10;
+
+  // ── Summary Table ──
+  y = checkPageSpace(doc, y, 30);
+  doc.setTextColor(PDF_COLORS.sectionHeader);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Summary", margin, y);
+  y += 3;
+
+  const sumHeaders = ["Total", "Present", "Absent", "Leave", "Holiday"];
+  const sumWidths = [contentW / 5, contentW / 5, contentW / 5, contentW / 5, contentW / 5];
+  y = drawTableHeader(doc, y, sumHeaders, sumWidths, margin);
+  y = drawTableRow(
+    doc,
+    y,
+    [
+      String(report.summary.total),
+      String(report.summary.present),
+      String(report.summary.absent),
+      String(report.summary.leave),
+      String(report.summary.holiday),
+    ],
+    sumWidths,
+    margin,
+    false
+  );
+  y += 8;
+
+  // ── QR Logs ──
+  if (report.qrLogs && report.qrLogs.length > 0) {
+    y = checkPageSpace(doc, y, 30);
+    doc.setTextColor(PDF_COLORS.sectionHeader);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("QR Logs", margin, y);
+    y += 3;
+
+    const qrHeaders = ["Name", "Role", "Check-In", "Check-Out", "Status"];
+    const qrWidths = [contentW * 0.3, contentW * 0.15, contentW * 0.18, contentW * 0.18, contentW * 0.19];
+    y = drawTableHeader(doc, y, qrHeaders, qrWidths, margin);
+    report.qrLogs.forEach((log, i) => {
+      y = drawTableRow(
+        doc,
+        y,
+        [log.name, log.role, formatTimeStr(log.checkIn), formatTimeStr(log.checkOut), log.status],
+        qrWidths,
+        margin,
+        i % 2 === 1,
+        4
+      );
+    });
+    y += 8;
+  }
+
+  // ── Student Report ──
+  if (report.studentReport.length > 0) {
+    y = checkPageSpace(doc, y, 30);
+    doc.setTextColor(PDF_COLORS.sectionHeader);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Student Report (${report.studentReport.length})`, margin, y);
+    y += 3;
+
+    const sHeaders = ["Name", "ID", "Class", "In", "Out", "Status", "Subjects"];
+    const sWidths = [
+      contentW * 0.2,
+      contentW * 0.12,
+      contentW * 0.1,
+      contentW * 0.11,
+      contentW * 0.11,
+      contentW * 0.13,
+      contentW * 0.23,
+    ];
+    y = drawTableHeader(doc, y, sHeaders, sWidths, margin);
+    report.studentReport.forEach((rec, i) => {
+      const subjectsStr = rec.subjects
+        ? rec.subjects.map((s) => `${s.subject.charAt(0)}:${s.status.charAt(0)}`).join(" ")
+        : "-";
+      y = drawTableRow(
+        doc,
+        y,
+        [
+          rec.name,
+          rec.userId,
+          rec.class || "-",
+          formatTimeStr(rec.checkIn),
+          formatTimeStr(rec.checkOut),
+          rec.status,
+          subjectsStr,
+        ],
+        sWidths,
+        margin,
+        i % 2 === 1,
+        5
+      );
+    });
+    y += 8;
+  }
+
+  // ── Teacher Report ──
+  if (report.teacherReport.length > 0) {
+    y = checkPageSpace(doc, y, 30);
+    doc.setTextColor(PDF_COLORS.sectionHeader);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Teacher Report (${report.teacherReport.length})`, margin, y);
+    y += 3;
+
+    const tHeaders = ["Name", "ID", "Check-In", "Check-Out", "Status", "Subjects"];
+    const tWidths = [contentW * 0.22, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.22];
+    y = drawTableHeader(doc, y, tHeaders, tWidths, margin);
+    report.teacherReport.forEach((rec, i) => {
+      const subjectsStr = rec.subjects
+        ? rec.subjects.map((s) => `${s.subject.charAt(0)}:${s.status.charAt(0)}`).join(" ")
+        : "-";
+      y = drawTableRow(
+        doc,
+        y,
+        [rec.name, rec.userId, formatTimeStr(rec.checkIn), formatTimeStr(rec.checkOut), rec.status, subjectsStr],
+        tWidths,
+        margin,
+        i % 2 === 1,
+        4
+      );
+    });
+    y += 8;
+  }
+
+  // ── Footer ──
+  const footY = doc.internal.pageSize.getHeight() - 15;
+  doc.setDrawColor(PDF_COLORS.border);
+  doc.line(margin, footY - 3, pageW - margin, footY - 3);
+  doc.setTextColor("#888888");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "italic");
+  doc.text("Generated by Sankalp Attendance Management System", margin, footY);
+  doc.text(new Date().toLocaleString(), pageW - margin, footY, { align: "right" });
+
+  const fileName = `Daily_Report_${dateStr}.pdf`;
+  doc.save(fileName);
+}
+
+function generateMonthlyReportPDF(
+  report: MonthlyReportData,
+  monthStr: string,
+  className: string,
+  roleFilter: string
+) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 15;
+  const contentW = pageW - margin * 2;
+
+  // ── Header ──
+  doc.setFillColor(PDF_COLORS.headerBg);
+  doc.rect(0, 0, pageW, 35, "F");
+  doc.setTextColor(PDF_COLORS.headerText);
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("Sankalp Vidya Academy", pageW / 2, 14, { align: "center" });
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "normal");
+  doc.text("Monthly Attendance Report", pageW / 2, 23, { align: "center" });
+
+  // Formatted month
+  const [yr, mn] = monthStr.split("-");
+  const monthDate = new Date(parseInt(yr), parseInt(mn) - 1, 1);
+  const formattedMonth = monthDate.toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
+  doc.setFontSize(10);
+  doc.text(formattedMonth, pageW / 2, 31, { align: "center" });
+
+  let y = 42;
+
+  // ── Filters ──
+  doc.setTextColor(PDF_COLORS.sectionHeader);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Filters Applied", margin, y);
+  y += 6;
+  doc.setTextColor(PDF_COLORS.bodyText);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Class: ${className === "ALL" ? "All Classes" : className}`, margin, y);
+  y += 5;
+  doc.text(`Role: ${roleFilter === "ALL" ? "All" : roleFilter}`, margin, y);
+  y += 10;
+
+  const allRecords = [...report.studentReport, ...report.teacherReport];
+
+  allRecords.forEach((rec) => {
+    y = checkPageSpace(doc, y, 45);
+
+    // User header
+    doc.setFillColor(PDF_COLORS.sectionHeader);
+    doc.setTextColor(PDF_COLORS.headerText);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.rect(margin, y, contentW, 8, "F");
+    doc.text(`${rec.name} (${rec.userId})`, margin + 3, y + 5.5);
+    const roleLabel = rec.class ? `Class: ${rec.class}` : "Teacher";
+    doc.setFontSize(8);
+    doc.text(roleLabel, pageW - margin - 3, y + 5.5, { align: "right" });
+    y += 10;
+
+    // Summary row
+    y = checkPageSpace(doc, y, 20);
+    doc.setTextColor(PDF_COLORS.bodyText);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    const sumHeaders = ["Total Days", "Present", "Absent", "Leave", "Holiday"];
+    const sumW = [contentW / 5, contentW / 5, contentW / 5, contentW / 5, contentW / 5];
+    y = drawTableHeader(doc, y, sumHeaders, sumW, margin);
+    y = drawTableRow(
+      doc,
+      y,
+      [
+        String(rec.summary.totalDays),
+        String(rec.summary.present),
+        String(rec.summary.absent),
+        String(rec.summary.leave),
+        String(rec.summary.holiday),
+      ],
+      sumW,
+      margin,
+      false
+    );
+    y += 6;
+
+    // Subject summary
+    if (Object.keys(rec.subjectSummary).length > 0) {
+      y = checkPageSpace(doc, y, 25);
+      doc.setTextColor(PDF_COLORS.sectionHeader);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("Subject-wise Summary", margin, y);
+      y += 4;
+
+      const subHeaders = ["Subject", "Present", "Absent", "Leave", "Holiday", "No Class"];
+      const subW = [
+        contentW * 0.3,
+        contentW * 0.14,
+        contentW * 0.14,
+        contentW * 0.14,
+        contentW * 0.14,
+        contentW * 0.14,
+      ];
+      y = drawTableHeader(doc, y, subHeaders, subW, margin);
+      const subEntries = Object.entries(rec.subjectSummary);
+      subEntries.forEach(([subject, counts], si) => {
+        y = checkPageSpace(doc, y, 10);
+        y = drawTableRow(
+          doc,
+          y,
+          [
+            subject,
+            String(counts.present),
+            String(counts.absent),
+            String(counts.leave),
+            String(counts.holiday),
+            String(counts.noClass || 0),
+          ],
+          subW,
+          margin,
+          si % 2 === 1
+        );
+      });
+      y += 6;
+    }
+
+    y += 4;
+  });
+
+  // ── Footer ──
+  const footY = doc.internal.pageSize.getHeight() - 15;
+  doc.setDrawColor(PDF_COLORS.border);
+  doc.line(margin, footY - 3, pageW - margin, footY - 3);
+  doc.setTextColor("#888888");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "italic");
+  doc.text("Generated by Sankalp Attendance Management System", margin, footY);
+  doc.text(new Date().toLocaleString(), pageW - margin, footY, { align: "right" });
+
+  const fileName = `Monthly_Report_${monthStr}.pdf`;
+  doc.save(fileName);
 }
 
 // ─── Styled Card Wrapper ─────────────────────────────────────────────────────
@@ -1751,6 +2207,9 @@ function IDCardsTab() {
   const [selectedCard, setSelectedCard] = useState<IDCardData | null>(null);
   const [loadingCard, setLoadingCard] = useState<string | null>(null);
 
+  const getCardColors = (role: string) =>
+    role === "TEACHER" ? TEACHER_CARD : STUDENT_CARD;
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -1785,82 +2244,175 @@ function IDCardsTab() {
     }
   };
 
+  const handleRemoveCard = (userId: string) => {
+    if (selectedCard && selectedCard.user.userId === userId) {
+      setSelectedCard(null);
+      toast.success("Card removed from view");
+    }
+  };
+
   const handleDownload = async () => {
     if (!selectedCard) return;
 
-    const cardEl = document.getElementById("id-card-preview");
-    if (!cardEl) return;
-
     try {
+      const colors = getCardColors(selectedCard.user.role);
+      const isStudent = selectedCard.user.role !== "TEACHER";
+
       const canvas = document.createElement("canvas");
       const scale = 2;
-      canvas.width = 350 * scale;
-      canvas.height = 500 * scale;
+      const W = 350;
+      const H = 550;
+      canvas.width = W * scale;
+      canvas.height = H * scale;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
       ctx.scale(scale, scale);
+
+      // Background
       ctx.fillStyle = "#080616";
-      ctx.fillRect(0, 0, 350, 500);
+      ctx.fillRect(0, 0, W, H);
+
+      // Role-based border
+      ctx.strokeStyle = colors.primary;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(1.5, 1.5, W - 3, H - 3, 16);
+      ctx.stroke();
 
       // Header gradient
-      const gradient = ctx.createLinearGradient(0, 0, 350, 70);
-      gradient.addColorStop(0, "#1A1953");
-      gradient.addColorStop(1, "#2F2FE4");
+      const gradient = ctx.createLinearGradient(0, 0, W, 90);
+      gradient.addColorStop(0, colors.headerGradient[0]);
+      gradient.addColorStop(1, colors.headerGradient[1]);
       ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, 350, 70);
+      ctx.beginPath();
+      ctx.roundRect(3, 3, W - 6, 88, [14, 14, 0, 0]);
+      ctx.fill();
 
-      // Header text
+      // Org name
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 22px sans-serif";
+      ctx.font = "bold 20px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("Sankalp", 175, 40);
+      ctx.fillText("Sankalp Vidya Academy", W / 2, 38);
+
+      // Role label
+      const roleLabel = isStudent ? "Student ID Card" : "Teacher ID Card";
+      ctx.font = "12px sans-serif";
+      const roleLabelWidth = ctx.measureText(roleLabel).width + 24;
+      const rlX = (W - roleLabelWidth) / 2;
+      ctx.fillStyle = "rgba(255,255,255,0.2)";
+      ctx.beginPath();
+      ctx.roundRect(rlX, 48, roleLabelWidth, 24, 12);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText(roleLabel, W / 2, 65);
+
+      // Accent line under header
+      ctx.strokeStyle = colors.primary;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(30, 96);
+      ctx.lineTo(W - 30, 96);
+      ctx.stroke();
 
       // Name
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 16px sans-serif";
-      ctx.fillText(selectedCard.user.name, 175, 100);
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText(selectedCard.user.name, W / 2, 126);
 
-      // Class
-      if (selectedCard.user.class) {
-        ctx.fillStyle = "#a0a0ff";
-        ctx.font = "14px sans-serif";
-        ctx.fillText(selectedCard.user.class, 175, 125);
+      // Class badge (students only)
+      let yAfterClass = 140;
+      if (selectedCard.user.class && isStudent) {
+        yAfterClass = 152;
+        const classText = selectedCard.user.class;
+        ctx.font = "12px sans-serif";
+        const classW = ctx.measureText(classText).width + 24;
+        const clsX = (W - classW) / 2;
+        ctx.fillStyle = colors.primary + "33";
+        ctx.beginPath();
+        ctx.roundRect(clsX, 133, classW, 22, 11);
+        ctx.fill();
+        ctx.fillStyle = colors.primary;
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText(classText, W / 2, 149);
       }
 
-      // Subjects
+      // Subjects as pills
+      let subjectsY = yAfterClass + 14;
       if (selectedCard.user.subjects.length > 0) {
-        ctx.fillStyle = "#8080cc";
-        ctx.font = "11px sans-serif";
-        const subjectStr = selectedCard.user.subjects.join(", ");
-        const words = subjectStr.split(", ");
-        let line = "";
-        let y = selectedCard.user.class ? 145 : 125;
-        for (const word of words) {
-          const testLine = line ? line + ", " + word : word;
-          if (ctx.measureText(testLine).width > 300) {
-            ctx.fillText(line, 175, y);
-            line = word;
-            y += 16;
-          } else {
-            line = testLine;
+        ctx.font = "10px sans-serif";
+        const pillH = 20;
+        const pillGap = 6;
+        const pillPadX = 10;
+        const maxRowWidth = W - 40;
+        let currentRowItems: { text: string; width: number }[] = [];
+        let currentRowWidth = 0;
+        const rows: { text: string; width: number }[][] = [];
+
+        for (const subj of selectedCard.user.subjects) {
+          const tw = ctx.measureText(subj).width + pillPadX * 2;
+          if (currentRowWidth + tw + pillGap > maxRowWidth && currentRowItems.length > 0) {
+            rows.push(currentRowItems);
+            currentRowItems = [];
+            currentRowWidth = 0;
           }
+          currentRowItems.push({ text: subj, width: tw });
+          currentRowWidth += tw + pillGap;
         }
-        if (line) {
-          ctx.fillText(line, 175, y);
-          y += 16;
+        if (currentRowItems.length > 0) rows.push(currentRowItems);
+
+        for (const row of rows) {
+          const totalRowW = row.reduce((s, i) => s + i.width, 0) + (row.length - 1) * pillGap;
+          let startX = (W - totalRowW) / 2;
+          for (const item of row) {
+            ctx.fillStyle = colors.primary + "22";
+            ctx.beginPath();
+            ctx.roundRect(startX, subjectsY, item.width, pillH, 10);
+            ctx.fill();
+            ctx.strokeStyle = colors.primary + "55";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(startX, subjectsY, item.width, pillH, 10);
+            ctx.stroke();
+            ctx.fillStyle = colors.primary;
+            ctx.font = "10px sans-serif";
+            ctx.fillText(item.text, startX + item.width / 2, subjectsY + 14);
+            startX += item.width + pillGap;
+          }
+          subjectsY += pillH + pillGap;
         }
       }
 
-      // User ID
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "13px monospace";
-      ctx.fillText(`ID: ${selectedCard.user.userId}`, 175, 190);
+      // Info section (User ID & Password)
+      const infoY = subjectsY + 8;
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.beginPath();
+      ctx.roundRect(20, infoY, W - 40, 48, 8);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.1)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(20, infoY, W - 40, 48, 8);
+      ctx.stroke();
 
-      // Password
-      ctx.fillStyle = "#a0a0ff";
-      ctx.font = "12px monospace";
-      ctx.fillText(`Password: ${selectedCard.user.password}`, 175, 215);
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#ffffff80";
+      ctx.font = "10px sans-serif";
+      ctx.fillText("User ID", 32, infoY + 16);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 12px monospace";
+      ctx.fillText(selectedCard.user.userId, 32, infoY + 34);
+
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#ffffff80";
+      ctx.font = "10px sans-serif";
+      ctx.fillText("Password", W - 32, infoY + 16);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 12px monospace";
+      ctx.fillText(selectedCard.user.password, W - 32, infoY + 34);
+
+      ctx.textAlign = "center";
 
       // QR Code
       const qrImg = new Image();
@@ -1873,15 +2425,35 @@ function IDCardsTab() {
         setTimeout(() => reject(new Error("timeout")), 5000);
       });
 
-      const qrSize = 180;
-      const qrX = (350 - qrSize) / 2;
-      ctx.drawImage(qrImg, qrX, 240, qrSize, qrSize);
+      const qrSize = 160;
+      const qrX = (W - qrSize) / 2;
+      const qrY = infoY + 60;
+
+      // QR glow effect
+      ctx.shadowColor = colors.primary;
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "rgba(255,255,255,0.03)";
+      ctx.beginPath();
+      ctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 12);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // QR border
+      ctx.strokeStyle = colors.primary + "44";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 12);
+      ctx.stroke();
+
+      ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
 
       // Footer
       ctx.fillStyle = "#6060a0";
       ctx.font = "10px sans-serif";
-      ctx.fillText("Scan QR code to mark attendance", 175, 445);
-      ctx.fillText("Sankalp Attendance Management", 175, 465);
+      ctx.fillText("Scan QR code to mark attendance", W / 2, H - 36);
+      ctx.fillStyle = colors.primary + "aa";
+      ctx.font = "bold 10px sans-serif";
+      ctx.fillText("Sankalp Vidya Academy", W / 2, H - 18);
 
       const link = document.createElement("a");
       link.download = `${selectedCard.user.name}_${selectedCard.user.userId}.jpg`;
@@ -1924,33 +2496,58 @@ function IDCardsTab() {
         </ThemedCard>
       ) : (
         <div className="space-y-3">
-          {filteredUsers.map((u) => (
-            <ThemedCard key={u.id}>
-              <CardContent className="p-4 flex items-center justify-between">
-                <div className="min-w-0">
-                  <div className="font-semibold text-white truncate">{u.name}</div>
-                  <div className="text-sm text-white/50">
-                    {u.userId} &middot; <span className="text-[#2F2FE4]">{u.role}</span>
-                    {u.class ? ` · ${u.class}` : ""}
+          {filteredUsers.map((u) => {
+            const cardColors = getCardColors(u.role);
+            return (
+              <ThemedCard key={u.id}>
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-white truncate">{u.name}</div>
+                    <div className="text-sm text-white/50">
+                      {u.userId} &middot;{" "}
+                      <span style={{ color: cardColors.primary }}>{u.role}</span>
+                      {u.class ? ` · ${u.class}` : ""}
+                    </div>
                   </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-[#2F2FE4]/30 text-[#2F2FE4] hover:bg-[#2F2FE4]/10 min-h-[44px] rounded-xl"
-                  onClick={() => handleGenerateCard(u.userId, u.id)}
-                  disabled={loadingCard === u.id}
-                >
-                  {loadingCard === u.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <IdCard className="h-4 w-4" />
-                  )}
-                  <span className="ml-1.5">ID Card</span>
-                </Button>
-              </CardContent>
-            </ThemedCard>
-          ))}
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="min-h-[44px] rounded-xl"
+                      style={{
+                        borderColor: cardColors.primary + "4D",
+                        color: cardColors.primary,
+                      }}
+                      onClick={() => handleGenerateCard(u.userId, u.id)}
+                      disabled={loadingCard === u.id}
+                    >
+                      {loadingCard === u.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <IdCard className="h-4 w-4" />
+                      )}
+                      <span className="ml-1.5">ID Card</span>
+                    </Button>
+                    {selectedCard && selectedCard.user.userId === u.userId && (
+                      <TooltipRoot>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-9 w-9 min-h-[36px] min-w-[36px] rounded-lg border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            onClick={() => handleRemoveCard(u.userId)}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Remove Card</TooltipContent>
+                      </TooltipRoot>
+                    )}
+                  </div>
+                </CardContent>
+              </ThemedCard>
+            );
+          })}
         </div>
       )}
 
@@ -1960,52 +2557,137 @@ function IDCardsTab() {
           <DialogHeader>
             <DialogTitle>ID Card Preview</DialogTitle>
           </DialogHeader>
-          {selectedCard && (
-            <div className="flex flex-col items-center">
-              <div
-                id="id-card-preview"
-                className="w-[350px] rounded-2xl border-2 border-[#2F2FE4]/30 p-6 text-center"
-                style={{ background: `linear-gradient(180deg, ${THEME.accent}, ${THEME.dark})` }}
-              >
-                <div className="text-2xl font-bold text-white mb-2">
-                  Sankalp
-                </div>
-                <Separator className="my-2 bg-white/20" />
-                <div className="text-lg font-semibold text-white">
-                  {selectedCard.user.name}
-                </div>
-                {selectedCard.user.class && (
-                  <div className="text-sm text-[#2F2FE4] mt-1">
-                    {selectedCard.user.class}
+          {selectedCard && (() => {
+            const colors = getCardColors(selectedCard.user.role);
+            const isStudent = selectedCard.user.role !== "TEACHER";
+            const roleLabel = isStudent ? "Student ID Card" : "Teacher ID Card";
+            return (
+              <div className="flex flex-col items-center">
+                <div
+                  id="id-card-preview"
+                  className="w-[350px] rounded-2xl overflow-hidden shadow-2xl"
+                  style={{ border: `2px solid ${colors.primary}4D` }}
+                >
+                  {/* Header gradient */}
+                  <div
+                    className="px-6 pt-5 pb-4 text-center"
+                    style={{
+                      background: `linear-gradient(135deg, ${colors.headerGradient[0]}, ${colors.headerGradient[1]})`,
+                    }}
+                  >
+                    <div className="text-xl font-bold text-white tracking-wide">
+                      Sankalp Vidya Academy
+                    </div>
+                    <div className="mt-2">
+                      <span
+                        className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold text-white"
+                        style={{ background: "rgba(255,255,255,0.2)" }}
+                      >
+                        {roleLabel}
+                      </span>
+                    </div>
                   </div>
-                )}
-                {selectedCard.user.subjects.length > 0 && (
-                  <div className="text-xs text-white/50 mt-1">
-                    {selectedCard.user.subjects.join(", ")}
+
+                  {/* Body */}
+                  <div
+                    className="px-6 pt-4 pb-5 text-center"
+                    style={{ background: `linear-gradient(180deg, ${THEME.accent}, ${THEME.dark})` }}
+                  >
+                    {/* Name */}
+                    <div className="text-xl font-bold text-white">
+                      {selectedCard.user.name}
+                    </div>
+
+                    {/* Class badge (students) */}
+                    {selectedCard.user.class && isStudent && (
+                      <div className="mt-2">
+                        <span
+                          className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold"
+                          style={{
+                            background: colors.primary + "33",
+                            color: colors.primary,
+                            border: `1px solid ${colors.primary}55`,
+                          }}
+                        >
+                          {selectedCard.user.class}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Subjects as pills */}
+                    {selectedCard.user.subjects.length > 0 && (
+                      <div className="flex flex-wrap justify-center gap-1.5 mt-3">
+                        {selectedCard.user.subjects.map((sub) => (
+                          <span
+                            key={sub}
+                            className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium"
+                            style={{
+                              background: colors.primary + "22",
+                              color: colors.primary,
+                              border: `1px solid ${colors.primary}44`,
+                            }}
+                          >
+                            {sub}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Info section */}
+                    <div
+                      className="mt-4 rounded-lg p-3 text-left grid grid-cols-2 gap-2"
+                      style={{
+                        background: "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    >
+                      <div>
+                        <div className="text-[10px] text-white/50 mb-0.5">User ID</div>
+                        <div className="text-sm font-mono font-semibold text-white">
+                          {selectedCard.user.userId}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] text-white/50 mb-0.5">Password</div>
+                        <div className="text-sm font-mono font-semibold text-white">
+                          {selectedCard.user.password}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* QR Code */}
+                    <div className="mt-4 flex justify-center">
+                      <div
+                        className="rounded-xl p-2"
+                        style={{
+                          boxShadow: `0 0 20px ${colors.primary}33`,
+                          border: `1px solid ${colors.primary}44`,
+                          background: "rgba(255,255,255,0.03)",
+                        }}
+                      >
+                        <img
+                          src={selectedCard.qrCodeDataUrl}
+                          alt="QR Code"
+                          className="w-40 h-40 rounded-lg"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-3 text-xs text-white/40">
+                      Scan QR code to mark attendance
+                    </div>
+                    <div
+                      className="text-xs font-semibold mt-0.5"
+                      style={{ color: colors.primary + "aa" }}
+                    >
+                      Sankalp Vidya Academy
+                    </div>
                   </div>
-                )}
-                <div className="mt-3 text-sm font-mono text-white/80">
-                  ID: {selectedCard.user.userId}
-                </div>
-                <div className="text-xs font-mono text-white/50">
-                  Password: {selectedCard.user.password}
-                </div>
-                <div className="mt-4 flex justify-center">
-                  <img
-                    src={selectedCard.qrCodeDataUrl}
-                    alt="QR Code"
-                    className="w-44 h-44 rounded-lg"
-                  />
-                </div>
-                <div className="mt-2 text-xs text-white/30">
-                  Scan QR code to mark attendance
-                </div>
-                <div className="text-xs text-white/30">
-                  Sankalp Attendance Management
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
           <DialogFooter>
             <Button
               variant="outline"
@@ -2490,6 +3172,7 @@ function DailyReport() {
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [report, setReport] = useState<DailyReportData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [reportSection, setReportSection] = useState<string>("students");
 
   const generate = async () => {
@@ -2514,6 +3197,20 @@ function DailyReport() {
       toast.error("Failed to generate report");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadPDF = () => {
+    if (!report || !date) return;
+    setPdfLoading(true);
+    try {
+      const dateStr = date.toISOString().split("T")[0];
+      generateDailyReportPDF(report, dateStr, className, roleFilter);
+      toast.success("Report downloaded successfully");
+    } catch {
+      toast.error("Failed to generate PDF");
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -2585,6 +3282,18 @@ function DailyReport() {
                 <FileBarChart className="h-4 w-4" />
               )}
               <span className="ml-1.5">Generate</span>
+            </Button>
+            <Button
+              onClick={downloadPDF}
+              disabled={!report || pdfLoading}
+              className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl shadow-lg shadow-[#2F2FE4]/25 min-h-[44px]"
+            >
+              {pdfLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span className="ml-1.5">PDF</span>
             </Button>
           </div>
         </CardContent>
@@ -2875,6 +3584,7 @@ function MonthlyReport() {
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [report, setReport] = useState<MonthlyReportData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [reportSection, setReportSection] = useState<string>("students");
 
@@ -2899,6 +3609,19 @@ function MonthlyReport() {
       toast.error("Failed to generate report");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadPDF = () => {
+    if (!report || !month) return;
+    setPdfLoading(true);
+    try {
+      generateMonthlyReportPDF(report, month, className, roleFilter);
+      toast.success("Report downloaded successfully");
+    } catch {
+      toast.error("Failed to generate PDF");
+    } finally {
+      setPdfLoading(false);
     }
   };
 
@@ -3125,6 +3848,18 @@ function MonthlyReport() {
                 <FileBarChart className="h-4 w-4" />
               )}
               <span className="ml-1.5">Generate</span>
+            </Button>
+            <Button
+              onClick={downloadPDF}
+              disabled={!report || pdfLoading}
+              className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl shadow-lg shadow-[#2F2FE4]/25 min-h-[44px]"
+            >
+              {pdfLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span className="ml-1.5">PDF</span>
             </Button>
           </div>
         </CardContent>
