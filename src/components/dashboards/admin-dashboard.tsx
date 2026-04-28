@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { useTheme } from "next-themes";
 import { useAuthStore } from "@/stores/auth-store";
 import { CLASSES, CLASS_SUBJECTS } from "@/lib/constants";
 import { toast } from "sonner";
@@ -75,6 +76,8 @@ import {
   BookOpen,
   LayoutDashboard,
   Menu,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import jsPDF from "jspdf";
@@ -279,6 +282,7 @@ function getActiveLabel(navKey: NavKey): string {
 
 export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
   const { logout } = useAuthStore();
+  const { theme, setTheme } = useTheme();
   const [activeNav, setActiveNav] = useState<NavKey>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -290,25 +294,23 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
   };
 
   return (
-    <div className="min-h-screen flex" style={{ background: THEME.dark }}>
+    <div className="min-h-screen flex bg-background">
       {/* ── Desktop Sidebar (lg+) ── */}
       <aside
-        className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-60 z-30 border-r border-white/10"
-        style={{ background: THEME.accent }}
+        className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-60 z-30 border-r dark:border-white/10 border-border bg-card dark:bg-[#1A1953]"
       >
         {/* Logo area */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
+        <div className="flex items-center gap-3 px-4 py-5 border-b dark:border-white/10 border-border">
           <div
-            className="flex items-center justify-center rounded-xl p-1.5"
-            style={{ background: THEME.primary }}
+            className="flex items-center justify-center rounded-xl p-1.5 bg-primary"
           >
-            <ShieldCheck className="h-5 w-5 text-white" />
+            <ShieldCheck className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-base font-bold text-white tracking-tight">
+            <h1 className="text-base font-bold text-foreground dark:text-white tracking-tight">
               Sankalp Attendance
             </h1>
-            <p className="text-[10px] text-white/40">Admin Panel</p>
+            <p className="text-[10px] text-muted-foreground dark:text-white/40">Admin Panel</p>
           </div>
         </div>
 
@@ -323,8 +325,8 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
                 onClick={() => handleNavClick(item.key)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
                   isActive
-                    ? "text-white"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 hover:text-foreground dark:hover:text-white"
                 }`}
                 style={isActive ? { background: THEME.primary } : undefined}
               >
@@ -336,16 +338,16 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
         </nav>
 
         {/* User info + Logout */}
-        <div className="border-t border-white/10 px-4 py-3">
+        <div className="border-t dark:border-white/10 border-border px-4 py-3">
           <div className="flex items-center gap-2 mb-2">
             <div className="h-2 w-2 rounded-full bg-green-400" />
-            <span className="text-sm text-white/80 truncate">{userProp.name}</span>
+            <span className="text-sm text-foreground dark:text-white/80 truncate">{userProp.name}</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={logout}
-            className="w-full justify-start text-white/60 hover:text-white hover:bg-white/10"
+            className="w-full justify-start text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
@@ -363,31 +365,29 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
 
       {/* ── Mobile Sidebar Drawer ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-60 flex flex-col border-r border-white/10 transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-60 flex flex-col border-r dark:border-white/10 border-border bg-card dark:bg-[#1A1953] transition-transform duration-200 lg:hidden ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
-        style={{ background: THEME.accent }}
       >
         {/* Logo area */}
-        <div className="flex items-center justify-between px-4 py-5 border-b border-white/10">
+        <div className="flex items-center justify-between px-4 py-5 border-b dark:border-white/10 border-border">
           <div className="flex items-center gap-3">
             <div
-              className="flex items-center justify-center rounded-xl p-1.5"
-              style={{ background: THEME.primary }}
+              className="flex items-center justify-center rounded-xl p-1.5 bg-primary"
             >
-              <ShieldCheck className="h-5 w-5 text-white" />
+              <ShieldCheck className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-white tracking-tight">
+              <h1 className="text-base font-bold text-foreground dark:text-white tracking-tight">
                 Sankalp Attendance
               </h1>
-              <p className="text-[10px] text-white/40">Admin Panel</p>
+              <p className="text-[10px] text-muted-foreground dark:text-white/40">Admin Panel</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="text-white/60 hover:text-white hover:bg-white/10"
+            className="text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -405,8 +405,8 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
                 onClick={() => handleNavClick(item.key)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
                   isActive
-                    ? "text-white"
-                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                    ? "text-primary-foreground"
+                    : "text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 hover:text-foreground dark:hover:text-white"
                 }`}
                 style={isActive ? { background: THEME.primary } : undefined}
               >
@@ -418,16 +418,16 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
         </nav>
 
         {/* User info + Logout */}
-        <div className="border-t border-white/10 px-4 py-3">
+        <div className="border-t dark:border-white/10 border-border px-4 py-3">
           <div className="flex items-center gap-2 mb-2">
             <div className="h-2 w-2 rounded-full bg-green-400" />
-            <span className="text-sm text-white/80 truncate">{userProp.name}</span>
+            <span className="text-sm text-foreground dark:text-white/80 truncate">{userProp.name}</span>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={logout}
-            className="w-full justify-start text-white/60 hover:text-white hover:bg-white/10"
+            className="w-full justify-start text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
@@ -439,10 +439,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
       <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
         {/* Header */}
         <header
-          className="sticky top-0 z-30 border-b border-white/10"
-          style={{
-            background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
-          }}
+          className="sticky top-0 z-30 border-b dark:border-white/10 border-border bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
         >
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
@@ -450,25 +447,33 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden text-white/70 hover:text-white hover:bg-white/10"
+                className="lg:hidden text-muted-foreground dark:text-white/70 dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu className="h-5 w-5" />
               </Button>
-              <h2 className="text-lg font-bold text-white tracking-tight">
+              <h2 className="text-lg font-bold text-primary-foreground tracking-tight">
                 {getActiveLabel(activeNav)}
               </h2>
             </div>
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full dark:bg-white/10 bg-muted">
                 <div className="h-2 w-2 rounded-full bg-green-400" />
-                <span className="text-sm text-white/80">{userProp.name}</span>
+                <span className="text-sm text-foreground dark:text-white/80">{userProp.name}</span>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="text-muted-foreground dark:text-white/70 dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-5 w-5" />}
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={logout}
-                className="border-white/20 text-white hover:bg-white/10 hover:text-white"
+                className="dark:border-white/20 border-border text-primary-foreground hover:bg-muted dark:hover:bg-white/10 dark:hover:text-white"
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Logout</span>
@@ -537,16 +542,16 @@ function getAllSubjectsForClasses(classNames: string[]): string[] {
 
 function getStatusBadge(status: string) {
   const colorMap: Record<string, string> = {
-    PRESENT: "bg-green-500/20 text-green-400 border-green-500/30",
-    ABSENT: "bg-red-500/20 text-red-400 border-red-500/30",
-    LEAVE: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-    HOLIDAY: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-    PENDING: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    APPROVED: "bg-green-500/20 text-green-400 border-green-500/30",
-    REJECTED: "bg-red-500/20 text-red-400 border-red-500/30",
-    NO_CLASS: "bg-gray-500/20 text-gray-400 border-gray-500/30",
+    PRESENT: "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30",
+    ABSENT: "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30",
+    LEAVE: "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30",
+    HOLIDAY: "bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/30",
+    PENDING: "bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-200 dark:border-yellow-500/30",
+    APPROVED: "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30",
+    REJECTED: "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/30",
+    NO_CLASS: "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-500/30",
   };
-  const cls = colorMap[status] || "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  const cls = colorMap[status] || "bg-gray-100 dark:bg-gray-500/20 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-500/30";
   return (
     <Badge className={`${cls} rounded-full border text-[10px] font-semibold px-2.5 py-0.5`} variant="outline">
       {status.replace("_", " ")}
@@ -581,6 +586,29 @@ function getStatusColor(status: string): string {
   return map[status] || PDF_COLORS.bodyText;
 }
 
+function truncateText(doc: jsPDF, text: string, maxWidth: number): string {
+  if (doc.getTextDimensions(text).w <= maxWidth) return text;
+  let truncated = text;
+  while (truncated.length > 0 && doc.getTextDimensions(truncated + "...").w > maxWidth) {
+    truncated = truncated.slice(0, -1);
+  }
+  return truncated.length < text.length ? truncated + "..." : text;
+}
+
+function drawPDFFooter(doc: jsPDF) {
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  const footY = pageH - 15;
+  doc.setDrawColor(PDF_COLORS.border);
+  doc.line(margin, footY - 3, pageW - margin, footY - 3);
+  doc.setTextColor("#888888");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "italic");
+  doc.text("Generated by Sankalp Attendance Management System", margin, footY);
+  doc.text(new Date().toLocaleString(), pageW - margin, footY, { align: "right" });
+}
+
 function drawTableHeader(
   doc: jsPDF,
   y: number,
@@ -588,15 +616,17 @@ function drawTableHeader(
   colWidths: number[],
   startX: number
 ): number {
-  const rowH = 8;
+  const rowH = 9;
+  const padding = 2;
   doc.setFillColor(PDF_COLORS.sectionHeader);
   doc.rect(startX, y, colWidths.reduce((a, b) => a + b, 0), rowH, "F");
   doc.setTextColor(PDF_COLORS.headerText);
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
   doc.setFont("helvetica", "bold");
-  let x = startX + 2;
+  let x = startX + padding;
   for (let i = 0; i < headers.length; i++) {
-    doc.text(headers[i], x, y + 5.5);
+    const maxW = colWidths[i] - padding * 2;
+    doc.text(truncateText(doc, headers[i], maxW), x, y + rowH / 2 + 1, { baseline: "middle" } as jsPDF.textOptions);
     x += colWidths[i];
   }
   return y + rowH;
@@ -611,10 +641,12 @@ function drawTableRow(
   isAlt: boolean,
   statusColumnIndex?: number
 ): number {
-  const rowH = 7;
+  const rowH = 8;
+  const padding = 2;
   const tableW = colWidths.reduce((a, b) => a + b, 0);
 
-  if (y + rowH > doc.internal.pageSize.getHeight() - 20) {
+  if (y + rowH > doc.internal.pageSize.getHeight() - 25) {
+    drawPDFFooter(doc);
     doc.addPage();
     y = 20;
   }
@@ -628,8 +660,7 @@ function drawTableRow(
   doc.rect(startX, y, tableW, rowH, "S");
 
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  let x = startX + 2;
+  let x = startX + padding;
   for (let i = 0; i < cells.length; i++) {
     if (statusColumnIndex !== undefined && i === statusColumnIndex) {
       doc.setTextColor(getStatusColor(cells[i]));
@@ -638,11 +669,9 @@ function drawTableRow(
       doc.setTextColor(PDF_COLORS.bodyText);
       doc.setFont("helvetica", "normal");
     }
-    const maxW = colWidths[i] - 4;
-    const text = doc.getTextDimensions ? cells[i] : cells[i];
-    doc.text(text.length > 30 ? text.substring(0, 28) + ".." : text, x, y + 5, {
-      maxWidth: maxW,
-    } as jsPDF.textOptions);
+    const maxW = colWidths[i] - padding * 2;
+    const displayText = truncateText(doc, cells[i], maxW);
+    doc.text(displayText, x, y + rowH / 2 + 1, { baseline: "middle" } as jsPDF.textOptions);
     x += colWidths[i];
   }
 
@@ -651,6 +680,7 @@ function drawTableRow(
 
 function checkPageSpace(doc: jsPDF, y: number, needed: number): number {
   if (y + needed > doc.internal.pageSize.getHeight() - 25) {
+    drawPDFFooter(doc);
     doc.addPage();
     return 20;
   }
@@ -689,7 +719,7 @@ function generateDailyReportPDF(
   doc.setFontSize(10);
   doc.text(formattedDate, pageW / 2, 31, { align: "center" });
 
-  let y = 42;
+  let y = 45;
 
   // ── Filters ──
   doc.setTextColor(PDF_COLORS.sectionHeader);
@@ -707,11 +737,16 @@ function generateDailyReportPDF(
 
   // ── Summary Table ──
   y = checkPageSpace(doc, y, 30);
+  // Section divider
+  doc.setDrawColor(PDF_COLORS.sectionHeader);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageW - margin, y);
+  y += 4;
   doc.setTextColor(PDF_COLORS.sectionHeader);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("Summary", margin, y);
-  y += 3;
+  y += 6;
 
   const sumHeaders = ["Total", "Present", "Absent", "Leave", "Holiday"];
   const sumWidths = [contentW / 5, contentW / 5, contentW / 5, contentW / 5, contentW / 5];
@@ -730,16 +765,21 @@ function generateDailyReportPDF(
     margin,
     false
   );
-  y += 8;
+  y += 10;
 
   // ── QR Logs ──
   if (report.qrLogs && report.qrLogs.length > 0) {
     y = checkPageSpace(doc, y, 30);
+    // Section divider
+    doc.setDrawColor(PDF_COLORS.sectionHeader);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y);
+    y += 4;
     doc.setTextColor(PDF_COLORS.sectionHeader);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text("QR Logs", margin, y);
-    y += 3;
+    y += 6;
 
     const qrHeaders = ["Name", "Role", "Check-In", "Check-Out", "Status"];
     const qrWidths = [contentW * 0.3, contentW * 0.15, contentW * 0.18, contentW * 0.18, contentW * 0.19];
@@ -755,26 +795,31 @@ function generateDailyReportPDF(
         4
       );
     });
-    y += 8;
+    y += 10;
   }
 
   // ── Student Report ──
   if (report.studentReport.length > 0) {
     y = checkPageSpace(doc, y, 30);
+    // Section divider
+    doc.setDrawColor(PDF_COLORS.sectionHeader);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y);
+    y += 4;
     doc.setTextColor(PDF_COLORS.sectionHeader);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text(`Student Report (${report.studentReport.length})`, margin, y);
-    y += 3;
+    y += 6;
 
     const sHeaders = ["Name", "ID", "Class", "In", "Out", "Status", "Subjects"];
     const sWidths = [
-      contentW * 0.2,
+      contentW * 0.24,
       contentW * 0.12,
+      contentW * 0.09,
       contentW * 0.1,
-      contentW * 0.11,
-      contentW * 0.11,
-      contentW * 0.13,
+      contentW * 0.1,
+      contentW * 0.12,
       contentW * 0.23,
     ];
     y = drawTableHeader(doc, y, sHeaders, sWidths, margin);
@@ -800,20 +845,25 @@ function generateDailyReportPDF(
         5
       );
     });
-    y += 8;
+    y += 10;
   }
 
   // ── Teacher Report ──
   if (report.teacherReport.length > 0) {
     y = checkPageSpace(doc, y, 30);
+    // Section divider
+    doc.setDrawColor(PDF_COLORS.sectionHeader);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y);
+    y += 4;
     doc.setTextColor(PDF_COLORS.sectionHeader);
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text(`Teacher Report (${report.teacherReport.length})`, margin, y);
-    y += 3;
+    y += 6;
 
     const tHeaders = ["Name", "ID", "Check-In", "Check-Out", "Status", "Subjects"];
-    const tWidths = [contentW * 0.22, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.22];
+    const tWidths = [contentW * 0.26, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.18];
     y = drawTableHeader(doc, y, tHeaders, tWidths, margin);
     report.teacherReport.forEach((rec, i) => {
       const subjectsStr = rec.subjects
@@ -829,18 +879,11 @@ function generateDailyReportPDF(
         4
       );
     });
-    y += 8;
+    y += 10;
   }
 
-  // ── Footer ──
-  const footY = doc.internal.pageSize.getHeight() - 15;
-  doc.setDrawColor(PDF_COLORS.border);
-  doc.line(margin, footY - 3, pageW - margin, footY - 3);
-  doc.setTextColor("#888888");
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.text("Generated by Sankalp Attendance Management System", margin, footY);
-  doc.text(new Date().toLocaleString(), pageW - margin, footY, { align: "right" });
+  // ── Footer (only on last page) ──
+  drawPDFFooter(doc);
 
   const fileName = `Daily_Report_${dateStr}.pdf`;
   doc.save(fileName);
@@ -878,7 +921,7 @@ function generateMonthlyReportPDF(
   doc.setFontSize(10);
   doc.text(formattedMonth, pageW / 2, 31, { align: "center" });
 
-  let y = 42;
+  let y = 45;
 
   // ── Filters ──
   doc.setTextColor(PDF_COLORS.sectionHeader);
@@ -897,25 +940,28 @@ function generateMonthlyReportPDF(
   const allRecords = [...report.studentReport, ...report.teacherReport];
 
   allRecords.forEach((rec) => {
-    y = checkPageSpace(doc, y, 45);
+    y = checkPageSpace(doc, y, 50);
 
-    // User header
+    // Section divider
+    doc.setDrawColor(PDF_COLORS.sectionHeader);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, pageW - margin, y);
+    y += 4;
+
+    // User header bar (10mm tall)
     doc.setFillColor(PDF_COLORS.sectionHeader);
     doc.setTextColor(PDF_COLORS.headerText);
     doc.setFontSize(10);
     doc.setFont("helvetica", "bold");
-    doc.rect(margin, y, contentW, 8, "F");
-    doc.text(`${rec.name} (${rec.userId})`, margin + 3, y + 5.5);
+    doc.rect(margin, y, contentW, 10, "F");
+    doc.text(`${rec.name} (${rec.userId})`, margin + 3, y + 10 / 2 + 1, { baseline: "middle" } as jsPDF.textOptions);
     const roleLabel = rec.class ? `Class: ${rec.class}` : "Teacher";
     doc.setFontSize(8);
-    doc.text(roleLabel, pageW - margin - 3, y + 5.5, { align: "right" });
-    y += 10;
+    doc.text(roleLabel, pageW - margin - 3, y + 10 / 2 + 1, { align: "right", baseline: "middle" } as jsPDF.textOptions);
+    y += 12;
 
     // Summary row
-    y = checkPageSpace(doc, y, 20);
-    doc.setTextColor(PDF_COLORS.bodyText);
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
+    y = checkPageSpace(doc, y, 25);
     const sumHeaders = ["Total Days", "Present", "Absent", "Leave", "Holiday"];
     const sumW = [contentW / 5, contentW / 5, contentW / 5, contentW / 5, contentW / 5];
     y = drawTableHeader(doc, y, sumHeaders, sumW, margin);
@@ -933,16 +979,16 @@ function generateMonthlyReportPDF(
       margin,
       false
     );
-    y += 6;
+    y += 8;
 
     // Subject summary
     if (Object.keys(rec.subjectSummary).length > 0) {
-      y = checkPageSpace(doc, y, 25);
+      y = checkPageSpace(doc, y, 30);
       doc.setTextColor(PDF_COLORS.sectionHeader);
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.text("Subject-wise Summary", margin, y);
-      y += 4;
+      y += 5;
 
       const subHeaders = ["Subject", "Present", "Absent", "Leave", "Holiday", "No Class"];
       const subW = [
@@ -956,7 +1002,7 @@ function generateMonthlyReportPDF(
       y = drawTableHeader(doc, y, subHeaders, subW, margin);
       const subEntries = Object.entries(rec.subjectSummary);
       subEntries.forEach(([subject, counts], si) => {
-        y = checkPageSpace(doc, y, 10);
+        y = checkPageSpace(doc, y, 12);
         y = drawTableRow(
           doc,
           y,
@@ -973,21 +1019,14 @@ function generateMonthlyReportPDF(
           si % 2 === 1
         );
       });
-      y += 6;
+      y += 8;
     }
 
-    y += 4;
+    y += 8;
   });
 
-  // ── Footer ──
-  const footY = doc.internal.pageSize.getHeight() - 15;
-  doc.setDrawColor(PDF_COLORS.border);
-  doc.line(margin, footY - 3, pageW - margin, footY - 3);
-  doc.setTextColor("#888888");
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.text("Generated by Sankalp Attendance Management System", margin, footY);
-  doc.text(new Date().toLocaleString(), pageW - margin, footY, { align: "right" });
+  // ── Footer (only on last page) ──
+  drawPDFFooter(doc);
 
   const fileName = `Monthly_Report_${monthStr}.pdf`;
   doc.save(fileName);
@@ -997,7 +1036,7 @@ function generateMonthlyReportPDF(
 
 function ThemedCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <Card className={`bg-white/5 border-white/10 text-white backdrop-blur-sm ${className}`}>
+    <Card className={`bg-card border-border text-card-foreground ${className}`}>
       {children}
     </Card>
   );
@@ -1131,12 +1170,12 @@ function StudentsTab() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex-1 w-full sm:max-w-sm">
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground dark:text-white/40" />
             <Input
               placeholder="Search by name or ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
+              className="pl-9 dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus:border-[#2F2FE4]"
             />
           </div>
         </div>
@@ -1150,11 +1189,11 @@ function StudentsTab() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
         </div>
       ) : students.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-white/40">
+          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
             No students found. Click &quot;Add Student&quot; to create one.
           </CardContent>
         </ThemedCard>
@@ -1165,12 +1204,12 @@ function StudentsTab() {
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-white truncate">{s.name}</div>
-                    <div className="text-sm text-white/50 mt-0.5">
-                      ID: <span className="font-mono text-white/70">{s.userId}</span>
+                    <div className="font-semibold text-card-foreground dark:text-white truncate">{s.name}</div>
+                    <div className="text-sm text-muted-foreground dark:text-white/50 mt-0.5">
+                      ID: <span className="font-mono text-muted-foreground dark:text-white/70">{s.userId}</span>
                     </div>
-                    <div className="text-sm text-white/50">
-                      Class: <span className="text-white/70">{s.class || "-"}</span>
+                    <div className="text-sm text-muted-foreground dark:text-white/50">
+                      Class: <span className="text-muted-foreground dark:text-white/70">{s.class || "-"}</span>
                     </div>
                     {s.subjects && Array.isArray(s.subjects) && s.subjects.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -1178,7 +1217,7 @@ function StudentsTab() {
                           <Badge
                             key={sub}
                             variant="outline"
-                            className="text-[10px] bg-[#2F2FE4]/20 text-[#2F2FE4] border-[#2F2FE4]/30 rounded-full px-2"
+                            className="text-[10px] bg-[#2F2FE4]/10 text-[#2F2FE4] border-[#2F2FE4]/20 dark:bg-[#2F2FE4]/20 dark:border-[#2F2FE4]/30 rounded-full px-2"
                           >
                             {sub}
                           </Badge>
@@ -1186,13 +1225,13 @@ function StudentsTab() {
                       </div>
                     )}
                     {s.phone && (
-                      <div className="text-sm text-white/50 mt-1">
-                        Phone: <span className="text-white/70">{s.phone}</span>
+                      <div className="text-sm text-muted-foreground dark:text-white/50 mt-1">
+                        Phone: <span className="text-muted-foreground dark:text-white/70">{s.phone}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-white/40">Password:</span>
-                      <span className="text-xs font-mono text-white/80">
+                      <span className="text-xs text-muted-foreground dark:text-white/40">Password:</span>
+                      <span className="text-xs font-mono text-foreground dark:text-white/80">
                         {visiblePasswords[s.userId]
                           ? s.plainPassword || "Not available"
                           : "••••••••"}
@@ -1200,7 +1239,7 @@ function StudentsTab() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-white/10 text-white/50 hover:text-white/80"
+                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-muted dark:hover:bg-white/10 text-muted-foreground dark:text-white/50 dark:hover:text-white/80"
                         onClick={() => togglePasswordVisibility(s.userId)}
                       >
                         {visiblePasswords[s.userId] ? (
@@ -1215,7 +1254,7 @@ function StudentsTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/10 text-white/70 hover:bg-white/10 hover:text-white min-h-[44px] min-w-[44px] rounded-xl"
+                      className="dark:border-white/10 text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => handleEdit(s)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -1223,7 +1262,7 @@ function StudentsTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
+                      className="border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => setDeleteStudent(s)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -1629,12 +1668,12 @@ function TeachersTab() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex-1 w-full sm:max-w-sm">
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground dark:text-white/40" />
             <Input
               placeholder="Search by name or ID..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
+              className="pl-9 dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus:border-[#2F2FE4]"
             />
           </div>
         </div>
@@ -1648,11 +1687,11 @@ function TeachersTab() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
         </div>
       ) : teachers.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-white/40">
+          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
             No teachers found. Click &quot;Add Teacher&quot; to create one.
           </CardContent>
         </ThemedCard>
@@ -1663,9 +1702,9 @@ function TeachersTab() {
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-white truncate">{t.name}</div>
-                    <div className="text-sm text-white/50 mt-0.5">
-                      ID: <span className="font-mono text-white/70">{t.userId}</span>
+                    <div className="font-semibold text-card-foreground dark:text-white truncate">{t.name}</div>
+                    <div className="text-sm text-muted-foreground dark:text-white/50 mt-0.5">
+                      ID: <span className="font-mono text-muted-foreground dark:text-white/70">{t.userId}</span>
                     </div>
                     {t.subjects && Array.isArray(t.subjects) && t.subjects.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -1673,7 +1712,7 @@ function TeachersTab() {
                           <Badge
                             key={sub}
                             variant="outline"
-                            className="text-[10px] bg-[#2F2FE4]/20 text-[#2F2FE4] border-[#2F2FE4]/30 rounded-full px-2"
+                            className="text-[10px] bg-[#2F2FE4]/10 text-[#2F2FE4] border-[#2F2FE4]/20 dark:bg-[#2F2FE4]/20 dark:border-[#2F2FE4]/30 rounded-full px-2"
                           >
                             {sub}
                           </Badge>
@@ -1681,13 +1720,13 @@ function TeachersTab() {
                       </div>
                     )}
                     {t.phone && (
-                      <div className="text-sm text-white/50 mt-1">
-                        Phone: <span className="text-white/70">{t.phone}</span>
+                      <div className="text-sm text-muted-foreground dark:text-white/50 mt-1">
+                        Phone: <span className="text-muted-foreground dark:text-white/70">{t.phone}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-white/40">Password:</span>
-                      <span className="text-xs font-mono text-white/80">
+                      <span className="text-xs text-muted-foreground dark:text-white/40">Password:</span>
+                      <span className="text-xs font-mono text-foreground dark:text-white/80">
                         {visiblePasswords[t.userId]
                           ? t.plainPassword || "Not available"
                           : "••••••••"}
@@ -1695,7 +1734,7 @@ function TeachersTab() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-white/10 text-white/50 hover:text-white/80"
+                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-muted dark:hover:bg-white/10 text-muted-foreground dark:text-white/50 dark:hover:text-white/80"
                         onClick={() => togglePasswordVisibility(t.userId)}
                       >
                         {visiblePasswords[t.userId] ? (
@@ -1710,7 +1749,7 @@ function TeachersTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-amber-500/30 text-amber-400 hover:bg-amber-500/10 hover:text-amber-300 min-h-[44px] rounded-xl"
+                      className="border-amber-300 dark:border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-500 dark:hover:text-amber-300 min-h-[44px] rounded-xl"
                       onClick={() => handleMarkClassOff(t)}
                       disabled={markingOff === t.id}
                     >
@@ -1724,7 +1763,7 @@ function TeachersTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-white/10 text-white/70 hover:bg-white/10 hover:text-white min-h-[44px] min-w-[44px] rounded-xl"
+                      className="dark:border-white/10 text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => handleEdit(t)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -1732,7 +1771,7 @@ function TeachersTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
+                      className="border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => setDeleteTeacher(t)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -2077,20 +2116,20 @@ function QRScannerTab() {
     <div className="space-y-6">
       <ThemedCard>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
+          <CardTitle className="flex items-center gap-2 text-card-foreground dark:text-white">
             <QrCode className="h-5 w-5 text-[#2F2FE4]" /> QR Scanner
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-white/70">User ID</Label>
+            <Label className="text-muted-foreground dark:text-white/70">User ID</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="Enter or scan User ID"
                 value={scanInput}
                 onChange={(e) => setScanInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleScan()}
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-white placeholder:text-muted-foreground dark:text-white/30 focus:border-[#2F2FE4]"
               />
               <Button
                 onClick={handleScan}
@@ -2107,14 +2146,14 @@ function QRScannerTab() {
           </div>
           <Button
             variant="outline"
-            className="w-full border-white/10 text-white/70 hover:bg-white/10 hover:text-white rounded-xl min-h-[44px]"
+            className="w-full dark:border-white/10 text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 rounded-xl min-h-[44px]"
             onClick={() => setCameraOpen(!cameraOpen)}
           >
             <Camera className="h-4 w-4 mr-2" />
             {cameraOpen ? "Close Camera" : "Open Camera (Scan QR)"}
           </Button>
           {cameraOpen && (
-            <div className="rounded-xl border border-white/10 overflow-hidden">
+            <div className="rounded-xl border dark:border-white/10 border-border overflow-hidden">
               <CameraView onScan={(code) => { setScanInput(code); setCameraOpen(false); }} />
             </div>
           )}
@@ -2123,11 +2162,11 @@ function QRScannerTab() {
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center gap-2">
                   {scanResult.type === "checkIn" ? (
-                    <CheckCircle className="h-5 w-5 text-green-400" />
+                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                   ) : (
-                    <XCircle className="h-5 w-5 text-orange-400" />
+                    <XCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                   )}
-                  <span className="font-medium text-white">
+                  <span className="font-medium text-card-foreground dark:text-white">
                     {scanResult.type === "checkIn"
                       ? "Check-In"
                       : scanResult.type === "checkOut"
@@ -2135,10 +2174,10 @@ function QRScannerTab() {
                         : "Updated"}
                   </span>
                 </div>
-                <div className="text-sm text-white/70 space-y-1">
+                <div className="text-sm text-muted-foreground dark:text-white/70 space-y-1">
                   <div>
                     User ID:{" "}
-                    <span className="font-mono text-white">
+                    <span className="font-mono text-card-foreground dark:text-white">
                       {scanResult.attendance.userId}
                     </span>
                   </div>
@@ -2163,44 +2202,44 @@ function QRScannerTab() {
 
       <ThemedCard>
         <CardHeader>
-          <CardTitle className="text-base text-white">
+          <CardTitle className="text-base text-card-foreground dark:text-white">
             Today&apos;s Attendance ({formatDateStr(today)})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {loadingAttendance ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-white/40" />
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground dark:text-white/40" />
             </div>
           ) : todayAttendance.length === 0 ? (
-            <p className="text-white/40 text-center py-4">
+            <p className="text-muted-foreground dark:text-white/40 text-center py-4">
               No attendance records for today.
             </p>
           ) : (
             <ScrollArea className="max-h-96">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/10 hover:bg-transparent">
-                    <TableHead className="text-white/50">Name</TableHead>
-                    <TableHead className="text-white/50">ID</TableHead>
-                    <TableHead className="text-white/50">Check-In</TableHead>
-                    <TableHead className="text-white/50">Check-Out</TableHead>
-                    <TableHead className="text-white/50">Status</TableHead>
+                  <TableRow className="dark:border-white/10 border-border hover:bg-transparent">
+                    <TableHead className="text-muted-foreground dark:text-white/50">Name</TableHead>
+                    <TableHead className="text-muted-foreground dark:text-white/50">ID</TableHead>
+                    <TableHead className="text-muted-foreground dark:text-white/50">Check-In</TableHead>
+                    <TableHead className="text-muted-foreground dark:text-white/50">Check-Out</TableHead>
+                    <TableHead className="text-muted-foreground dark:text-white/50">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {todayAttendance.map((rec) => (
-                    <TableRow key={rec.id} className="border-white/5 hover:bg-white/5">
-                      <TableCell className="font-medium text-white">
+                    <TableRow key={rec.id} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
+                      <TableCell className="font-medium text-card-foreground dark:text-white">
                         {rec.user?.name || "-"}
                       </TableCell>
-                      <TableCell className="font-mono text-xs text-white/70">
+                      <TableCell className="font-mono text-xs text-muted-foreground dark:text-white/70">
                         {rec.userId}
                       </TableCell>
-                      <TableCell className="text-white/70">
+                      <TableCell className="text-muted-foreground dark:text-white/70">
                         {formatTimeStr(rec.checkIn)}
                       </TableCell>
-                      <TableCell className="text-white/70">
+                      <TableCell className="text-muted-foreground dark:text-white/70">
                         {formatTimeStr(rec.checkOut)}
                       </TableCell>
                       <TableCell>{getStatusBadge(rec.status)}</TableCell>
@@ -2246,7 +2285,7 @@ function CameraView({ onScan }: { onScan: (code: string) => void }) {
 
   if (error) {
     return (
-      <div className="p-4 text-center text-sm text-white/40 bg-white/5">
+      <div className="p-4 text-center text-sm text-muted-foreground dark:text-white/40 bg-muted dark:bg-white/5">
         {error}
       </div>
     );
@@ -2555,22 +2594,22 @@ function IDCardsTab() {
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/40" />
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground dark:text-white/40" />
         <Input
           placeholder="Search users..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
+          className="pl-9 dark:bg-white/5 dark:border-white/10 dark:text-white placeholder:text-muted-foreground dark:text-white/30 focus:border-[#2F2FE4]"
         />
       </div>
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
         </div>
       ) : filteredUsers.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-white/40">
+          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
             No users found.
           </CardContent>
         </ThemedCard>
@@ -2582,8 +2621,8 @@ function IDCardsTab() {
               <ThemedCard key={u.id}>
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="min-w-0">
-                    <div className="font-semibold text-white truncate">{u.name}</div>
-                    <div className="text-sm text-white/50">
+                    <div className="font-semibold text-card-foreground dark:text-white truncate">{u.name}</div>
+                    <div className="text-sm text-muted-foreground dark:text-white/50">
                       {u.userId} &middot;{" "}
                       <span style={{ color: cardColors.primary }}>{u.role}</span>
                       {u.class ? ` · ${u.class}` : ""}
@@ -2614,7 +2653,7 @@ function IDCardsTab() {
                           <Button
                             size="icon"
                             variant="outline"
-                            className="h-9 w-9 min-h-[36px] min-w-[36px] rounded-lg border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                            className="h-9 w-9 min-h-[36px] min-w-[36px] rounded-lg border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-300"
                             onClick={() => handleRemoveCard(u.userId)}
                           >
                             <X className="h-3.5 w-3.5" />
@@ -2660,7 +2699,7 @@ function IDCardsTab() {
                     </div>
                     <div className="mt-2">
                       <span
-                        className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold text-white"
+                        className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold text-card-foreground dark:text-white"
                         style={{ background: "rgba(255,255,255,0.2)" }}
                       >
                         {roleLabel}
@@ -2722,14 +2761,14 @@ function IDCardsTab() {
                       }}
                     >
                       <div>
-                        <div className="text-[10px] text-white/50 mb-0.5">User ID</div>
-                        <div className="text-sm font-mono font-semibold text-white">
+                        <div className="text-[10px] text-muted-foreground dark:text-white/50 mb-0.5">User ID</div>
+                        <div className="text-sm font-mono font-semibold text-card-foreground dark:text-white">
                           {selectedCard.user.userId}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[10px] text-white/50 mb-0.5">Password</div>
-                        <div className="text-sm font-mono font-semibold text-white">
+                        <div className="text-[10px] text-muted-foreground dark:text-white/50 mb-0.5">Password</div>
+                        <div className="text-sm font-mono font-semibold text-card-foreground dark:text-white">
                           {selectedCard.user.password}
                         </div>
                       </div>
@@ -2754,7 +2793,7 @@ function IDCardsTab() {
                     </div>
 
                     {/* Footer */}
-                    <div className="mt-3 text-xs text-white/40">
+                    <div className="mt-3 text-xs text-muted-foreground dark:text-white/40">
                       Scan QR code to mark attendance
                     </div>
                     <div
@@ -2843,9 +2882,9 @@ function LeaveTab({ adminUserId }: { adminUserId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Label className="text-white/60 text-sm">Filter:</Label>
+        <Label className="text-muted-foreground dark:text-white/60 text-sm">Filter:</Label>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+          <SelectTrigger className="w-[140px] dark:bg-white/5 dark:border-white/10 dark:text-white">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -2859,11 +2898,11 @@ function LeaveTab({ adminUserId }: { adminUserId: string }) {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
         </div>
       ) : leaves.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-white/40">
+          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
             No leave requests found.
           </CardContent>
         </ThemedCard>
@@ -2874,17 +2913,17 @@ function LeaveTab({ adminUserId }: { adminUserId: string }) {
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-white">{leave.user?.name || "-"}</div>
-                    <div className="text-sm text-white/50">
+                    <div className="font-semibold text-card-foreground dark:text-white">{leave.user?.name || "-"}</div>
+                    <div className="text-sm text-muted-foreground dark:text-white/50">
                       ID: {leave.user?.userId} &middot; {leave.user?.role}
                       {leave.user?.class ? ` · ${leave.user.class}` : ""}
                     </div>
-                    <div className="text-sm text-white/70 mt-1">
+                    <div className="text-sm text-muted-foreground dark:text-white/70 mt-1">
                       {formatDateStr(leave.fromDate)} →{" "}
                       {formatDateStr(leave.toDate)}
                     </div>
                     {leave.remark && (
-                      <div className="text-sm text-white/40 mt-1">
+                      <div className="text-sm text-muted-foreground dark:text-white/40 mt-1">
                         {leave.remark}
                       </div>
                     )}
@@ -2975,11 +3014,11 @@ function HolidaysTab() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
         </div>
       ) : holidays.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-white/40">
+          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
             No holidays found. Click &quot;Add Holiday&quot; to create one.
           </CardContent>
         </ThemedCard>
@@ -2989,11 +3028,11 @@ function HolidaysTab() {
             <ThemedCard key={h.id}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <div className="font-semibold text-white">
+                  <div className="font-semibold text-card-foreground dark:text-white">
                     {formatDateStr(h.date)}
                   </div>
                   {h.remark && (
-                    <div className="text-sm text-white/50">
+                    <div className="text-sm text-muted-foreground dark:text-white/50">
                       {h.remark}
                     </div>
                   )}
@@ -3002,7 +3041,7 @@ function HolidaysTab() {
                       <Badge
                         key={cls}
                         variant="outline"
-                        className="text-[10px] bg-purple-500/20 text-purple-400 border-purple-500/30 rounded-full px-2"
+                        className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400 border-purple-200 dark:border-purple-500/30 rounded-full px-2"
                       >
                         {cls}
                       </Badge>
@@ -3012,7 +3051,7 @@ function HolidaysTab() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
+                  className="border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-300 min-h-[44px] min-w-[44px] rounded-xl"
                   onClick={() => setDeleteHoliday(h)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -3219,16 +3258,16 @@ function ReportsTab() {
   return (
     <div className="space-y-4">
       <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList className="bg-white/5 border border-white/10">
+        <TabsList className="dark:bg-white/5 bg-muted border dark:border-white/10 border-border">
           <TabsTrigger
             value="daily"
-            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg"
+            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg"
           >
             Daily
           </TabsTrigger>
           <TabsTrigger
             value="monthly"
-            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg"
+            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg"
           >
             Monthly
           </TabsTrigger>
@@ -3300,12 +3339,12 @@ function DailyReport() {
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-end">
             <div className="space-y-2 flex-1">
-              <Label className="text-white/60">Date</Label>
+              <Label className="text-muted-foreground dark:text-white/60">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-full justify-start text-left font-normal border-white/10 text-white hover:bg-white/10"
+                    className="w-full justify-start text-left font-normal dark:border-white/10 dark:text-white hover:bg-muted dark:hover:bg-white/10"
                   >
                     <CalendarDays className="mr-2 h-4 w-4" />
                     {date
@@ -3323,9 +3362,9 @@ function DailyReport() {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label className="text-white/60">Class</Label>
+              <Label className="text-muted-foreground dark:text-white/60">Class</Label>
               <Select value={className} onValueChange={setClassName}>
-                <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white">
+                <SelectTrigger className="w-[150px] dark:bg-white/5 dark:border-white/10 dark:text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -3339,9 +3378,9 @@ function DailyReport() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-white/60">Role</Label>
+              <Label className="text-muted-foreground dark:text-white/60">Role</Label>
               <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                <SelectTrigger className="w-[140px] dark:bg-white/5 dark:border-white/10 dark:text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -3386,64 +3425,64 @@ function DailyReport() {
             <ThemedCard>
               <CardContent className="p-4 text-center">
                 <div className="flex justify-center mb-2">
-                  <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-white/60" />
+                  <div className="h-10 w-10 rounded-xl bg-muted dark:bg-white/10 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-muted-foreground dark:text-white/60" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-white">{report.summary.total}</div>
-                <div className="text-xs text-white/40">Total</div>
+                <div className="text-2xl font-bold text-card-foreground dark:text-white">{report.summary.total}</div>
+                <div className="text-xs text-muted-foreground dark:text-white/40">Total</div>
               </CardContent>
             </ThemedCard>
             <ThemedCard>
               <CardContent className="p-4 text-center">
                 <div className="flex justify-center mb-2">
-                  <div className="h-10 w-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                    <UserCheck className="h-5 w-5 text-green-400" />
+                  <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-500/20 flex items-center justify-center">
+                    <UserCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-green-400">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {report.summary.present}
                 </div>
-                <div className="text-xs text-white/40">Present</div>
+                <div className="text-xs text-muted-foreground dark:text-white/40">Present</div>
               </CardContent>
             </ThemedCard>
             <ThemedCard>
               <CardContent className="p-4 text-center">
                 <div className="flex justify-center mb-2">
-                  <div className="h-10 w-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                    <UserX className="h-5 w-5 text-red-400" />
+                  <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center">
+                    <UserX className="h-5 w-5 text-red-600 dark:text-red-400" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-red-400">
+                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {report.summary.absent}
                 </div>
-                <div className="text-xs text-white/40">Absent</div>
+                <div className="text-xs text-muted-foreground dark:text-white/40">Absent</div>
               </CardContent>
             </ThemedCard>
             <ThemedCard>
               <CardContent className="p-4 text-center">
                 <div className="flex justify-center mb-2">
-                  <div className="h-10 w-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                    <Coffee className="h-5 w-5 text-amber-400" />
+                  <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+                    <Coffee className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-amber-400">
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                   {report.summary.leave}
                 </div>
-                <div className="text-xs text-white/40">Leave</div>
+                <div className="text-xs text-muted-foreground dark:text-white/40">Leave</div>
               </CardContent>
             </ThemedCard>
             <ThemedCard className="col-span-2 sm:col-span-1">
               <CardContent className="p-4 text-center">
                 <div className="flex justify-center mb-2">
-                  <div className="h-10 w-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                    <Sparkles className="h-5 w-5 text-purple-400" />
+                  <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-purple-400">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   {report.summary.holiday}
                 </div>
-                <div className="text-xs text-white/40">Holiday</div>
+                <div className="text-xs text-muted-foreground dark:text-white/40">Holiday</div>
               </CardContent>
             </ThemedCard>
           </div>
@@ -3461,7 +3500,7 @@ function DailyReport() {
           {report.qrLogs && report.qrLogs.length > 0 && (
             <ThemedCard>
               <CardHeader>
-                <CardTitle className="text-base text-white flex items-center gap-2">
+                <CardTitle className="text-base text-card-foreground dark:text-white flex items-center gap-2">
                   <ScanLine className="h-4 w-4 text-[#2F2FE4]" /> QR Logs
                 </CardTitle>
               </CardHeader>
@@ -3469,21 +3508,21 @@ function DailyReport() {
                 <ScrollArea className="max-h-64">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-white/10 hover:bg-transparent">
-                        <TableHead className="text-white/50">Name</TableHead>
-                        <TableHead className="text-white/50">Role</TableHead>
-                        <TableHead className="text-white/50">Check-In</TableHead>
-                        <TableHead className="text-white/50">Check-Out</TableHead>
-                        <TableHead className="text-white/50">Status</TableHead>
+                      <TableRow className="dark:border-white/10 border-border hover:bg-transparent">
+                        <TableHead className="text-muted-foreground dark:text-white/50">Name</TableHead>
+                        <TableHead className="text-muted-foreground dark:text-white/50">Role</TableHead>
+                        <TableHead className="text-muted-foreground dark:text-white/50">Check-In</TableHead>
+                        <TableHead className="text-muted-foreground dark:text-white/50">Check-Out</TableHead>
+                        <TableHead className="text-muted-foreground dark:text-white/50">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {report.qrLogs.map((log, i) => (
-                        <TableRow key={`${log.userId}-${i}`} className="border-white/5 hover:bg-white/5">
-                          <TableCell className="font-medium text-white">{log.name}</TableCell>
-                          <TableCell className="text-white/70 text-sm">{log.role}</TableCell>
-                          <TableCell className="text-white/70 text-sm">{formatTimeStr(log.checkIn)}</TableCell>
-                          <TableCell className="text-white/70 text-sm">{formatTimeStr(log.checkOut)}</TableCell>
+                        <TableRow key={`${log.userId}-${i}`} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
+                          <TableCell className="font-medium text-card-foreground dark:text-white">{log.name}</TableCell>
+                          <TableCell className="text-muted-foreground dark:text-white/70 text-sm">{log.role}</TableCell>
+                          <TableCell className="text-muted-foreground dark:text-white/70 text-sm">{formatTimeStr(log.checkIn)}</TableCell>
+                          <TableCell className="text-muted-foreground dark:text-white/70 text-sm">{formatTimeStr(log.checkOut)}</TableCell>
                           <TableCell>{getStatusBadge(log.status)}</TableCell>
                         </TableRow>
                       ))}
@@ -3497,11 +3536,11 @@ function DailyReport() {
           {/* Report Sections Tabs */}
           {(report.studentReport.length > 0 || report.teacherReport.length > 0) && (
             <Tabs value={reportSection} onValueChange={setReportSection}>
-              <TabsList className="bg-white/5 border border-white/10">
+              <TabsList className="dark:bg-white/5 bg-muted border dark:border-white/10 border-border">
                 {report.studentReport.length > 0 && (
                   <TabsTrigger
                     value="students"
-                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg gap-1.5"
+                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
                   >
                     <GraduationCap className="h-3.5 w-3.5" /> Students ({report.studentReport.length})
                   </TabsTrigger>
@@ -3509,7 +3548,7 @@ function DailyReport() {
                 {report.teacherReport.length > 0 && (
                   <TabsTrigger
                     value="teachers"
-                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg gap-1.5"
+                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
                   >
                     <Users className="h-3.5 w-3.5" /> Teachers ({report.teacherReport.length})
                   </TabsTrigger>
@@ -3523,24 +3562,24 @@ function DailyReport() {
                       <ScrollArea className="max-h-96">
                         <Table>
                           <TableHeader>
-                            <TableRow className="border-white/10 hover:bg-transparent">
-                              <TableHead className="text-white/50">Name</TableHead>
-                              <TableHead className="text-white/50">ID</TableHead>
-                              <TableHead className="text-white/50">Class</TableHead>
-                              <TableHead className="text-white/50">Check-In</TableHead>
-                              <TableHead className="text-white/50">Check-Out</TableHead>
-                              <TableHead className="text-white/50">Status</TableHead>
-                              <TableHead className="text-white/50">Subjects</TableHead>
+                            <TableRow className="dark:border-white/10 border-border hover:bg-transparent">
+                              <TableHead className="text-muted-foreground dark:text-white/50">Name</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">ID</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Class</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Check-In</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Check-Out</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Status</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Subjects</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {report.studentReport.map((rec) => (
-                              <TableRow key={rec.userId} className="border-white/5 hover:bg-white/5">
-                                <TableCell className="font-medium text-white">{rec.name}</TableCell>
-                                <TableCell className="font-mono text-xs text-white/70">{rec.userId}</TableCell>
-                                <TableCell className="text-sm text-white/70">{rec.class || "-"}</TableCell>
-                                <TableCell className="text-sm text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
-                                <TableCell className="text-sm text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
+                              <TableRow key={rec.userId} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
+                                <TableCell className="font-medium text-card-foreground dark:text-white">{rec.name}</TableCell>
+                                <TableCell className="font-mono text-xs text-muted-foreground dark:text-white/70">{rec.userId}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{rec.class || "-"}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
                                 <TableCell>{getStatusBadge(rec.status)}</TableCell>
                                 <TableCell>
                                   {rec.subjects && rec.subjects.length > 0 ? (
@@ -3548,17 +3587,17 @@ function DailyReport() {
                                       {rec.subjects.map((sub, i) => (
                                         <span
                                           key={i}
-                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/50"
+                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted dark:bg-white/5 text-muted-foreground dark:text-white/50"
                                           title={`${sub.subject}: ${sub.status}`}
                                         >
                                           {sub.subject.charAt(0)}
                                           <span className={`ml-0.5 ${
-                                            sub.status === "PRESENT" ? "text-green-400" :
-                                            sub.status === "ABSENT" ? "text-red-400" :
-                                            sub.status === "LEAVE" ? "text-amber-400" :
-                                            sub.status === "HOLIDAY" ? "text-purple-400" :
-                                            sub.status === "NO_CLASS" ? "text-gray-400" :
-                                            "text-white/40"
+                                            sub.status === "PRESENT" ? "text-green-600 dark:text-green-400" :
+                                            sub.status === "ABSENT" ? "text-red-600 dark:text-red-400" :
+                                            sub.status === "LEAVE" ? "text-amber-600 dark:text-amber-400" :
+                                            sub.status === "HOLIDAY" ? "text-purple-600 dark:text-purple-400" :
+                                            sub.status === "NO_CLASS" ? "text-gray-600 dark:text-gray-400" :
+                                            "text-muted-foreground dark:text-white/40"
                                           }`}>
                                             {sub.status.charAt(0)}
                                           </span>
@@ -3566,7 +3605,7 @@ function DailyReport() {
                                       ))}
                                     </div>
                                   ) : (
-                                    <span className="text-white/30">-</span>
+                                    <span className="text-muted-foreground dark:text-white/30">-</span>
                                   )}
                                 </TableCell>
                               </TableRow>
@@ -3586,22 +3625,22 @@ function DailyReport() {
                       <ScrollArea className="max-h-96">
                         <Table>
                           <TableHeader>
-                            <TableRow className="border-white/10 hover:bg-transparent">
-                              <TableHead className="text-white/50">Name</TableHead>
-                              <TableHead className="text-white/50">ID</TableHead>
-                              <TableHead className="text-white/50">Check-In</TableHead>
-                              <TableHead className="text-white/50">Check-Out</TableHead>
-                              <TableHead className="text-white/50">Status</TableHead>
-                              <TableHead className="text-white/50">Subjects</TableHead>
+                            <TableRow className="dark:border-white/10 border-border hover:bg-transparent">
+                              <TableHead className="text-muted-foreground dark:text-white/50">Name</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">ID</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Check-In</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Check-Out</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Status</TableHead>
+                              <TableHead className="text-muted-foreground dark:text-white/50">Subjects</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {report.teacherReport.map((rec) => (
-                              <TableRow key={rec.userId} className="border-white/5 hover:bg-white/5">
-                                <TableCell className="font-medium text-white">{rec.name}</TableCell>
-                                <TableCell className="font-mono text-xs text-white/70">{rec.userId}</TableCell>
-                                <TableCell className="text-sm text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
-                                <TableCell className="text-sm text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
+                              <TableRow key={rec.userId} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
+                                <TableCell className="font-medium text-card-foreground dark:text-white">{rec.name}</TableCell>
+                                <TableCell className="font-mono text-xs text-muted-foreground dark:text-white/70">{rec.userId}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
+                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
                                 <TableCell>{getStatusBadge(rec.status)}</TableCell>
                                 <TableCell>
                                   {rec.subjects && rec.subjects.length > 0 ? (
@@ -3609,15 +3648,15 @@ function DailyReport() {
                                       {rec.subjects.map((sub, i) => (
                                         <span
                                           key={i}
-                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/50"
+                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted dark:bg-white/5 text-muted-foreground dark:text-white/50"
                                           title={`${sub.subject}: ${sub.status}`}
                                         >
                                           {sub.subject.charAt(0)}
                                           <span className={`ml-0.5 ${
-                                            sub.status === "PRESENT" ? "text-green-400" :
-                                            sub.status === "ABSENT" ? "text-red-400" :
-                                            sub.status === "NO_CLASS" ? "text-gray-400" :
-                                            "text-white/40"
+                                            sub.status === "PRESENT" ? "text-green-600 dark:text-green-400" :
+                                            sub.status === "ABSENT" ? "text-red-600 dark:text-red-400" :
+                                            sub.status === "NO_CLASS" ? "text-gray-600 dark:text-gray-400" :
+                                            "text-muted-foreground dark:text-white/40"
                                           }`}>
                                             {sub.status.charAt(0)}
                                           </span>
@@ -3625,7 +3664,7 @@ function DailyReport() {
                                       ))}
                                     </div>
                                   ) : (
-                                    <span className="text-white/30">-</span>
+                                    <span className="text-muted-foreground dark:text-white/30">-</span>
                                   )}
                                 </TableCell>
                               </TableRow>
@@ -3642,7 +3681,7 @@ function DailyReport() {
 
           {report.studentReport.length === 0 && report.teacherReport.length === 0 && (
             <ThemedCard>
-              <CardContent className="py-12 text-center text-white/40">
+              <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
                 No data found for the selected filters.
               </CardContent>
             </ThemedCard>
@@ -3719,54 +3758,54 @@ function MonthlyReport() {
           <CollapsibleTrigger className="w-full">
             <div className="flex items-center justify-between">
               <div className="text-left min-w-0">
-                <div className="font-semibold text-white">{rec.name}</div>
-                <div className="text-sm text-white/50">
+                <div className="font-semibold text-card-foreground dark:text-white">{rec.name}</div>
+                <div className="text-sm text-muted-foreground dark:text-white/50">
                   {rec.userId} &middot; {rec.class || "-"}
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <div className="hidden sm:flex items-center gap-2 text-xs">
-                  <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400">
+                  <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
                     P:{rec.summary.present}
                   </span>
-                  <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400">
+                  <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
                     A:{rec.summary.absent}
                   </span>
-                  <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400">
+                  <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
                     L:{rec.summary.leave}
                   </span>
-                  <span className="px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">
+                  <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
                     H:{rec.summary.holiday}
                   </span>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-white/50 transition-transform ${
+                  className={`h-4 w-4 text-muted-foreground dark:text-white/50 transition-transform ${
                     expandedUser === rec.userId ? "rotate-180" : ""
                   }`}
                 />
               </div>
             </div>
             <div className="flex sm:hidden items-center gap-2 text-xs mt-2">
-              <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400">
+              <span className="px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
                 P:{rec.summary.present}
               </span>
-              <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-400">
+              <span className="px-2 py-1 rounded-full bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
                 A:{rec.summary.absent}
               </span>
-              <span className="px-2 py-1 rounded-full bg-amber-500/20 text-amber-400">
+              <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
                 L:{rec.summary.leave}
               </span>
-              <span className="px-2 py-1 rounded-full bg-purple-500/20 text-purple-400">
+              <span className="px-2 py-1 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
                 H:{rec.summary.holiday}
               </span>
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <Separator className="my-3 bg-white/10" />
+            <Separator className="my-3 bg-border dark:bg-white/10" />
             {/* Subject Summary */}
             {Object.keys(rec.subjectSummary).length > 0 && (
               <div className="mb-4">
-                <div className="text-sm font-medium text-white/80 mb-2 flex items-center gap-1.5">
+                <div className="text-sm font-medium text-foreground dark:text-white/80 mb-2 flex items-center gap-1.5">
                   <BookOpen className="h-3.5 w-3.5 text-[#2F2FE4]" /> Subject-wise Summary
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -3774,24 +3813,24 @@ function MonthlyReport() {
                     ([subject, counts]) => (
                       <div
                         key={subject}
-                        className="text-xs bg-white/5 border border-white/5 rounded-xl p-3"
+                        className="text-xs bg-muted dark:bg-white/5 border border-border dark:border-white/5 rounded-xl p-3"
                       >
-                        <div className="font-semibold text-white/80 mb-2">{subject}</div>
+                        <div className="font-semibold text-card-foreground dark:text-white/80 mb-2">{subject}</div>
                         <div className="flex flex-wrap gap-1.5">
-                          <span className="px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                          <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400">
                             P:{counts.present}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">
+                          <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400">
                             A:{counts.absent}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400">
                             L:{counts.leave}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
+                          <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400">
                             H:{counts.holiday}
                           </span>
                           {counts.noClass !== undefined && counts.noClass > 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-gray-500/20 text-gray-400">
+                            <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 dark:bg-gray-500/20 dark:text-gray-400">
                               NC:{counts.noClass}
                             </span>
                           )}
@@ -3805,14 +3844,14 @@ function MonthlyReport() {
             {/* QR Logs */}
             {rec.qrLogs && rec.qrLogs.length > 0 && (
               <div className="mb-4">
-                <div className="text-sm font-medium text-white/80 mb-2 flex items-center gap-1.5">
+                <div className="text-sm font-medium text-foreground dark:text-white/80 mb-2 flex items-center gap-1.5">
                   <ScanLine className="h-3.5 w-3.5 text-[#2F2FE4]" /> QR Logs
                 </div>
                 <ScrollArea className="max-h-32">
                   <div className="space-y-1">
                     {rec.qrLogs.map((log, i) => (
-                      <div key={i} className="flex items-center gap-3 text-xs text-white/50 bg-white/5 rounded-lg px-3 py-1.5">
-                        <span className="text-white/70">{log.date}</span>
+                      <div key={i} className="flex items-center gap-3 text-xs text-muted-foreground dark:text-white/50 bg-muted dark:bg-white/5 rounded-lg px-3 py-1.5">
+                        <span className="text-muted-foreground dark:text-white/70">{log.date}</span>
                         <span>In: {formatTimeStr(log.checkIn)}</span>
                         <span>Out: {formatTimeStr(log.checkOut)}</span>
                       </div>
@@ -3823,7 +3862,7 @@ function MonthlyReport() {
             )}
             {/* Daily Breakdown */}
             <div>
-              <div className="text-sm font-medium text-white/80 mb-2">
+              <div className="text-sm font-medium text-foreground dark:text-white/80 mb-2">
                 Daily Breakdown
               </div>
               <ScrollArea className="max-h-48">
@@ -3833,17 +3872,17 @@ function MonthlyReport() {
                     .map(([dateStr, info]) => {
                       const day = dateStr.split("-")[2];
                       const statusColorMap: Record<string, string> = {
-                        PRESENT: "bg-green-500/30 text-green-400 border-green-500/20",
-                        ABSENT: "bg-red-500/30 text-red-400 border-red-500/20",
-                        LEAVE: "bg-amber-500/30 text-amber-400 border-amber-500/20",
-                        HOLIDAY: "bg-purple-500/30 text-purple-400 border-purple-500/20",
-                        NO_CLASS: "bg-gray-500/30 text-gray-400 border-gray-500/20",
+                        PRESENT: "bg-green-100 dark:bg-green-500/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/20",
+                        ABSENT: "bg-red-100 dark:bg-red-500/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20",
+                        LEAVE: "bg-amber-100 dark:bg-amber-500/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20",
+                        HOLIDAY: "bg-purple-100 dark:bg-purple-500/30 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-500/20",
+                        NO_CLASS: "bg-gray-100 dark:bg-gray-500/30 text-gray-700 dark:text-gray-400 border-gray-200 dark:border-gray-500/20",
                       };
                       return (
                         <div
                           key={dateStr}
                           className={`text-center rounded-lg p-1.5 text-xs border ${
-                            statusColorMap[info.status] || "bg-white/5 text-white/40 border-white/5"
+                            statusColorMap[info.status] || "bg-muted text-muted-foreground dark:bg-white/5 dark:text-white/40 border-border dark:border-white/5"
                           }`}
                           title={`${dateStr}: ${info.status}${
                             info.checkIn ? ` (In: ${formatTimeStr(info.checkIn)})` : ""
@@ -3880,18 +3919,18 @@ function MonthlyReport() {
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-end">
             <div className="space-y-2 flex-1">
-              <Label className="text-white/60">Month (YYYY-MM)</Label>
+              <Label className="text-muted-foreground dark:text-white/60">Month (YYYY-MM)</Label>
               <Input
                 type="month"
                 value={month}
                 onChange={(e) => setMonth(e.target.value)}
-                className="bg-white/5 border-white/10 text-white focus:border-[#2F2FE4]"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-white focus:border-[#2F2FE4]"
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-white/60">Class</Label>
+              <Label className="text-muted-foreground dark:text-white/60">Class</Label>
               <Select value={className} onValueChange={setClassName}>
-                <SelectTrigger className="w-[150px] bg-white/5 border-white/10 text-white">
+                <SelectTrigger className="w-[150px] dark:bg-white/5 dark:border-white/10 dark:text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -3905,9 +3944,9 @@ function MonthlyReport() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-white/60">Role</Label>
+              <Label className="text-muted-foreground dark:text-white/60">Role</Label>
               <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-[140px] bg-white/5 border-white/10 text-white">
+                <SelectTrigger className="w-[140px] dark:bg-white/5 dark:border-white/10 dark:text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -3947,11 +3986,11 @@ function MonthlyReport() {
 
       {report && (allStudents.length > 0 || allTeachers.length > 0) && (
         <Tabs value={reportSection} onValueChange={setReportSection}>
-          <TabsList className="bg-white/5 border border-white/10">
+          <TabsList className="dark:bg-white/5 bg-muted border dark:border-white/10 border-border">
             {allStudents.length > 0 && (
               <TabsTrigger
                 value="students"
-                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg gap-1.5"
+                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
               >
                 <GraduationCap className="h-3.5 w-3.5" /> Students ({allStudents.length})
               </TabsTrigger>
@@ -3959,7 +3998,7 @@ function MonthlyReport() {
             {allTeachers.length > 0 && (
               <TabsTrigger
                 value="teachers"
-                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 rounded-lg gap-1.5"
+                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
               >
                 <Users className="h-3.5 w-3.5" /> Teachers ({allTeachers.length})
               </TabsTrigger>
@@ -3986,7 +4025,7 @@ function MonthlyReport() {
 
       {report && allStudents.length === 0 && allTeachers.length === 0 && (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-white/40">
+          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
             No data found for the selected month/class.
           </CardContent>
         </ThemedCard>
@@ -4072,7 +4111,7 @@ function SettingsTab() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-white/40" />
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
       </div>
     );
   }
@@ -4082,7 +4121,7 @@ function SettingsTab() {
       <ThemedCard>
         <CardHeader>
           <CardTitle
-            className="text-base text-white flex items-center gap-2"
+            className="text-base text-card-foreground dark:text-white flex items-center gap-2"
             style={{ background: "transparent" }}
           >
             <Settings className="h-4 w-4 text-[#2F2FE4]" /> Settings
@@ -4091,9 +4130,9 @@ function SettingsTab() {
         <CardContent className="space-y-6">
           {/* Timezone */}
           <div className="space-y-2">
-            <Label className="text-white/70">Timezone</Label>
+            <Label className="text-muted-foreground dark:text-white/70">Timezone</Label>
             <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger className="w-full bg-white/5 border-white/10 text-white">
+              <SelectTrigger className="w-full dark:bg-white/5 dark:border-white/10 dark:text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -4108,9 +4147,9 @@ function SettingsTab() {
 
           {/* Time Format */}
           <div className="space-y-2">
-            <Label className="text-white/70">Time Format</Label>
+            <Label className="text-muted-foreground dark:text-white/70">Time Format</Label>
             <Select value={timeFormat} onValueChange={setTimeFormat}>
-              <SelectTrigger className="w-full bg-white/5 border-white/10 text-white">
+              <SelectTrigger className="w-full dark:bg-white/5 dark:border-white/10 dark:text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -4120,30 +4159,30 @@ function SettingsTab() {
             </Select>
           </div>
 
-          <Separator className="bg-white/10" />
+          <Separator className="bg-border dark:bg-white/10" />
 
           {/* Telegram Bot Token */}
           <div className="space-y-2">
-            <Label className="text-white/70" htmlFor="telegram-token">Telegram Bot Token</Label>
+            <Label className="text-muted-foreground dark:text-white/70" htmlFor="telegram-token">Telegram Bot Token</Label>
             <Input
               id="telegram-token"
               value={telegramBotToken}
               onChange={(e) => setTelegramBotToken(e.target.value)}
               placeholder="Enter Telegram bot token"
-              className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#2F2FE4]"
+              className="dark:bg-white/5 dark:border-white/10 dark:text-white placeholder:text-muted-foreground dark:text-white/30 focus:border-[#2F2FE4]"
             />
-            <p className="text-xs text-white/40">
+            <p className="text-xs text-muted-foreground dark:text-white/40">
               Used for sending attendance notifications.
             </p>
           </div>
 
-          <Separator className="bg-white/10" />
+          <Separator className="bg-border dark:bg-white/10" />
 
           {/* Daily Report Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-white/70">Daily Report</Label>
-              <p className="text-xs text-white/40">
+              <Label className="text-muted-foreground dark:text-white/70">Daily Report</Label>
+              <p className="text-xs text-muted-foreground dark:text-white/40">
                 Send daily attendance report via Telegram
               </p>
             </div>
@@ -4156,18 +4195,18 @@ function SettingsTab() {
           {/* Daily Report Time */}
           {dailyReportEnabled && (
             <div className="space-y-2">
-              <Label className="text-white/70" htmlFor="report-time">Daily Report Time</Label>
+              <Label className="text-muted-foreground dark:text-white/70" htmlFor="report-time">Daily Report Time</Label>
               <Input
                 id="report-time"
                 type="time"
                 value={dailyReportTime}
                 onChange={(e) => setDailyReportTime(e.target.value)}
-                className="bg-white/5 border-white/10 text-white focus:border-[#2F2FE4]"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-white focus:border-[#2F2FE4]"
               />
             </div>
           )}
 
-          <Separator className="bg-white/10" />
+          <Separator className="bg-border dark:bg-white/10" />
 
           <Button
             onClick={handleSave}

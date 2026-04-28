@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTheme } from "next-themes";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
 import {
@@ -17,6 +18,8 @@ import {
   LayoutDashboard,
   Menu,
   X,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -73,14 +76,14 @@ const THEME = {
 
 // ─── Status Badge Color Map ────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
-  PRESENT: "bg-emerald-500 text-white",
-  ABSENT: "bg-red-500 text-white",
-  LEAVE: "bg-amber-500 text-white",
-  HOLIDAY: "bg-purple-500 text-white",
-  NO_CLASS: "bg-gray-400 text-white",
-  PENDING: "bg-amber-500 text-white",
-  APPROVED: "bg-emerald-500 text-white",
-  REJECTED: "bg-red-500 text-white",
+  PRESENT: "bg-green-100 text-green-700 dark:bg-emerald-500 dark:text-white",
+  ABSENT: "bg-red-100 text-red-700 dark:bg-red-500 dark:text-white",
+  LEAVE: "bg-amber-100 text-amber-700 dark:bg-amber-500 dark:text-white",
+  HOLIDAY: "bg-purple-100 text-purple-700 dark:bg-purple-500 dark:text-white",
+  NO_CLASS: "bg-gray-100 text-gray-700 dark:bg-gray-400 dark:text-white",
+  PENDING: "bg-amber-100 text-amber-700 dark:bg-amber-500 dark:text-white",
+  APPROVED: "bg-green-100 text-green-700 dark:bg-emerald-500 dark:text-white",
+  REJECTED: "bg-red-100 text-red-700 dark:bg-red-500 dark:text-white",
 };
 
 // ─── Sidebar Nav Items ─────────────────────────────────
@@ -153,6 +156,7 @@ interface Student {
 // ─── Component ─────────────────────────────────────────
 export function TeacherDashboard({ user }: TeacherDashboardProps) {
   const logout = useAuthStore((s) => s.logout);
+  const { theme, setTheme } = useTheme();
 
   // ── Navigation state ──
   const [activeTab, setActiveTab] = useState<TeacherTab>("attendance");
@@ -372,7 +376,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
 
   // ── Status badge helper ──
   const statusBadge = (status: string) => {
-    const colorClass = STATUS_COLORS[status] || "bg-gray-300 text-gray-800";
+    const colorClass = STATUS_COLORS[status] || "bg-gray-100 text-gray-700 dark:bg-gray-300 dark:text-gray-800";
     return (
       <span
         className={cn(
@@ -424,16 +428,16 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
   // SIDEBAR COMPONENT
   // ────────────────────────────────────────────────────────
   const SidebarContent = () => (
-    <div className="flex flex-col h-full" style={{ backgroundColor: THEME.accent }}>
+    <div className="flex flex-col h-full bg-card dark:bg-[#1A1953]">
       {/* Logo area */}
-      <div className="px-5 py-6 border-b border-white/10">
+      <div className="px-5 py-6 border-b dark:border-white/10 border-border">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center size-10 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20">
-            <Sparkles className="size-5 text-white" />
+          <div className="flex items-center justify-center size-10 rounded-xl dark:bg-white/15 bg-muted backdrop-blur-sm border dark:border-white/20 border-border">
+            <Sparkles className="size-5 text-foreground dark:text-white" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-white leading-tight">Sankalp Attendance</h2>
-            <p className="text-xs text-white/60">Teacher Panel</p>
+            <h2 className="text-base font-bold text-foreground dark:text-white leading-tight">Sankalp Attendance</h2>
+            <p className="text-xs text-foreground dark:text-white/60">Teacher Panel</p>
           </div>
         </div>
       </div>
@@ -447,10 +451,9 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
             className={cn(
               "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
               activeTab === key
-                ? "text-white shadow-md"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 dark:hover:text-white"
             )}
-            style={activeTab === key ? { backgroundColor: THEME.primary } : undefined}
           >
             <Icon className="size-5 shrink-0" />
             <span>{label}</span>
@@ -459,19 +462,19 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
       </nav>
 
       {/* User info + Logout */}
-      <div className="px-3 py-4 border-t border-white/10">
+      <div className="px-3 py-4 border-t dark:border-white/10 border-border">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="flex items-center justify-center size-9 rounded-full bg-white/15">
-            <UserCircle className="size-5 text-white" />
+          <div className="flex items-center justify-center size-9 rounded-full dark:bg-white/15 bg-muted">
+            <UserCircle className="size-5 text-foreground dark:text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium text-white truncate">{user.name}</p>
-            <p className="text-xs text-white/50 truncate">{user.userId}</p>
+            <p className="text-sm font-medium text-foreground dark:text-white truncate">{user.name}</p>
+            <p className="text-xs text-foreground dark:text-white/50 truncate">{user.userId}</p>
           </div>
         </div>
         <button
           onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-all"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 dark:hover:text-white transition-all"
         >
           <LogOut className="size-5 shrink-0" />
           <span>Logout</span>
@@ -484,7 +487,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
   // RENDER
   // ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex" style={{ backgroundColor: THEME.dark }}>
+    <div className="min-h-screen flex bg-background">
       {/* ════════════ DESKTOP SIDEBAR ════════════ */}
       <aside className="hidden lg:flex lg:flex-col lg:w-60 lg:fixed lg:inset-y-0 lg:z-50">
         <SidebarContent />
@@ -505,7 +508,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {/* Close button */}
           <button
             onClick={() => setSidebarOpen(false)}
-            className="fixed top-4 left-64 z-50 size-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            className="fixed top-4 left-64 z-50 size-8 flex items-center justify-center rounded-full dark:bg-white/10 bg-muted text-foreground dark:text-white hover:bg-muted dark:hover:bg-white/20"
           >
             <X className="size-4" />
           </button>
@@ -516,39 +519,46 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
       <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
         {/* ── Header ── */}
         <header
-          className="sticky top-0 z-40 shadow-xl"
-          style={{
-            background: `linear-gradient(135deg, ${THEME.accent} 0%, ${THEME.secondary} 50%, ${THEME.primary} 100%)`,
-          }}
+          className="sticky top-0 z-40 shadow-xl bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:via-[#162E93] dark:to-[#2F2FE4]"
         >
           <div className="flex items-center justify-between px-4 py-3 sm:px-6">
             <div className="flex items-center gap-3">
               {/* Hamburger - mobile only */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden size-10 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
+                className="lg:hidden size-10 flex items-center justify-center rounded-xl dark:bg-white/10 bg-primary/20 text-primary-foreground hover:bg-muted dark:hover:bg-white/20 transition-colors"
               >
                 <Menu className="size-5" />
               </button>
               <div>
-                <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
+                <h1 className="text-lg font-bold text-primary-foreground leading-tight tracking-tight">
                   {TAB_TITLES[activeTab]}
                 </h1>
-                <p className="text-xs text-blue-200 flex items-center gap-1">
+                <p className="text-xs text-primary-foreground/70 flex items-center gap-1">
                   <UserCircle className="size-3" />
                   Welcome, {user.name}
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              className="gap-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
-            >
-              <LogOut className="size-4" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-muted dark:hover:bg-white/10"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-5 w-5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="gap-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-muted dark:hover:bg-white/10 rounded-xl"
+              >
+                <LogOut className="size-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -559,20 +569,17 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "attendance" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4"
-                style={{
-                  background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
-                }}
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
               >
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-primary-foreground flex items-center gap-2">
                   <ClipboardCheck className="size-5" />
                   My Attendance History
                 </CardTitle>
-                <CardDescription className="text-blue-200">
+                <CardDescription className="text-primary-foreground/70">
                   View your check-in / check-out records
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 bg-white">
+              <CardContent className="p-4 sm:p-6 bg-card text-card-foreground">
                 {/* Date range filter */}
                 <div className="flex flex-col sm:flex-row gap-3 mb-5">
                   <div className="flex items-center gap-2 flex-1">
@@ -583,7 +590,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                           variant="outline"
                           className="w-full justify-start text-left font-normal rounded-xl"
                         >
-                          <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
+                          <CalendarDays className="size-4 mr-2 text-primary" />
                           {attStartDate ? formatDateDisplay(attStartDate) : "Pick a date"}
                         </Button>
                       </PopoverTrigger>
@@ -609,7 +616,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                           variant="outline"
                           className="w-full justify-start text-left font-normal rounded-xl"
                         >
-                          <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
+                          <CalendarDays className="size-4 mr-2 text-primary" />
                           {attEndDate ? formatDateDisplay(attEndDate) : "Pick a date"}
                         </Button>
                       </PopoverTrigger>
@@ -629,8 +636,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                   </div>
                   <Button
                     onClick={fetchAttendance}
-                    className="gap-2 rounded-xl shadow-md text-white min-w-[100px]"
-                    style={{ backgroundColor: THEME.primary }}
+                    className="gap-2 rounded-xl shadow-md text-white min-w-[100px] bg-primary"
                   >
                     <Loader2 className={cn("size-4", attendanceLoading && "animate-spin")} />
                     Refresh
@@ -640,11 +646,11 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 {/* Attendance table */}
                 {attendanceLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
-                    <span className="ml-2 text-sm text-gray-500">Loading...</span>
+                    <Loader2 className="size-6 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
                   </div>
                 ) : attendanceRecords.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
+                  <div className="text-center py-12 text-muted-foreground">
                     <ClipboardCheck className="size-12 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">No attendance records found for this period</p>
                   </div>
@@ -653,7 +659,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     <div className="max-h-[500px] overflow-y-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-gray-50 hover:bg-gray-50">
+                          <TableRow className="bg-muted/50 hover:bg-muted/50">
                             <TableHead className="font-semibold">Date</TableHead>
                             <TableHead className="font-semibold">Check-In</TableHead>
                             <TableHead className="font-semibold">Check-Out</TableHead>
@@ -662,7 +668,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                         </TableHeader>
                         <TableBody>
                           {attendanceRecords.map((record) => (
-                            <TableRow key={record.id} className="hover:bg-blue-50/50 transition-colors">
+                            <TableRow key={record.id} className="hover:bg-muted/50 transition-colors">
                               <TableCell className="font-medium">
                                 {formatDateDisplay(record.date)}
                               </TableCell>
@@ -684,20 +690,17 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "mark" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4"
-                style={{
-                  background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
-                }}
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
               >
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-primary-foreground flex items-center gap-2">
                   <CalendarDays className="size-5" />
                   Mark Subject Attendance
                 </CardTitle>
-                <CardDescription className="text-blue-200">
+                <CardDescription className="text-primary-foreground/70">
                   Select date, subject, and class, then mark attendance for each student
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 bg-white">
+              <CardContent className="p-4 sm:p-6 bg-card text-card-foreground">
                 {/* Filters */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                   {/* Date */}
@@ -709,7 +712,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                           variant="outline"
                           className="w-full justify-start text-left font-normal rounded-xl"
                         >
-                          <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
+                          <CalendarDays className="size-4 mr-2 text-primary" />
                           {markDate ? formatDateDisplay(markDate) : "Pick a date"}
                         </Button>
                       </PopoverTrigger>
@@ -778,16 +781,16 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                 {/* Students list */}
                 {studentsLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
-                    <span className="ml-2 text-sm text-gray-500">Loading students...</span>
+                    <Loader2 className="size-6 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading students...</span>
                   </div>
                 ) : markClass && students.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
+                  <div className="text-center py-12 text-muted-foreground">
                     <UserCircle className="size-12 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">No students found in {markClass}</p>
                   </div>
                 ) : !markClass ? (
-                  <div className="text-center py-12 text-gray-400">
+                  <div className="text-center py-12 text-muted-foreground">
                     <CalendarDays className="size-12 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">Select a class to see students</p>
                   </div>
@@ -797,7 +800,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                       <div className="max-h-[400px] overflow-y-auto">
                         <Table>
                           <TableHeader>
-                            <TableRow className="bg-gray-50 hover:bg-gray-50">
+                            <TableRow className="bg-muted/50 hover:bg-muted/50">
                               <TableHead className="w-12 font-semibold">#</TableHead>
                               <TableHead className="font-semibold">Student Name</TableHead>
                               <TableHead className="font-semibold">User ID</TableHead>
@@ -806,10 +809,10 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                           </TableHeader>
                           <TableBody>
                             {students.map((student, idx) => (
-                              <TableRow key={student.userId} className="hover:bg-blue-50/50 transition-colors">
-                                <TableCell className="text-gray-400">{idx + 1}</TableCell>
+                              <TableRow key={student.userId} className="hover:bg-muted/50 transition-colors">
+                                <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                                 <TableCell className="font-medium">{student.name}</TableCell>
-                                <TableCell className="text-gray-400 text-xs">{student.userId}</TableCell>
+                                <TableCell className="text-muted-foreground text-xs">{student.userId}</TableCell>
                                 <TableCell>
                                   <Select
                                     value={studentStatuses[student.userId] || SUBJECT_ATTENDANCE_STATUS.PRESENT}
@@ -839,8 +842,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                       <Button
                         onClick={handleSaveAttendance}
                         disabled={markSaving}
-                        className="gap-2 min-w-[160px] rounded-xl shadow-lg text-white"
-                        style={{ backgroundColor: THEME.primary }}
+                        className="gap-2 min-w-[160px] rounded-xl shadow-lg text-white bg-primary"
                       >
                         {markSaving ? (
                           <Loader2 className="size-4 animate-spin" />
@@ -860,26 +862,22 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "leave" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4"
-                style={{
-                  background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
-                }}
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <CardTitle className="text-white flex items-center gap-2">
+                    <CardTitle className="text-primary-foreground flex items-center gap-2">
                       <Plane className="size-5" />
                       My Leave Requests
                     </CardTitle>
-                    <CardDescription className="text-blue-200">
+                    <CardDescription className="text-primary-foreground/70">
                       View and apply for leave
                     </CardDescription>
                   </div>
                   <Dialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
                     <DialogTrigger asChild>
                       <Button
-                        className="gap-2 rounded-xl shadow-lg text-white"
-                        style={{ backgroundColor: THEME.primary }}
+                        className="gap-2 rounded-xl shadow-lg text-white bg-primary"
                       >
                         <Plus className="size-4" />
                         Apply Leave
@@ -888,7 +886,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                          <Plane className="size-5" style={{ color: THEME.primary }} />
+                          <Plane className="size-5 text-primary" />
                           Apply for Leave
                         </DialogTitle>
                         <DialogDescription>
@@ -904,7 +902,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                                 variant="outline"
                                 className="w-full justify-start text-left font-normal rounded-xl"
                               >
-                                <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
+                                <CalendarDays className="size-4 mr-2 text-primary" />
                                 {leaveFromDate ? format(leaveFromDate, "dd MMM yyyy") : "Pick a date"}
                               </Button>
                             </PopoverTrigger>
@@ -928,7 +926,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                                 variant="outline"
                                 className="w-full justify-start text-left font-normal rounded-xl"
                               >
-                                <CalendarDays className="size-4 mr-2" style={{ color: THEME.primary }} />
+                                <CalendarDays className="size-4 mr-2 text-primary" />
                                 {leaveToDate ? format(leaveToDate, "dd MMM yyyy") : "Pick a date"}
                               </Button>
                             </PopoverTrigger>
@@ -966,8 +964,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                         <Button
                           onClick={handleApplyLeave}
                           disabled={leaveSubmitting}
-                          className="gap-2 rounded-xl text-white"
-                          style={{ backgroundColor: THEME.primary }}
+                          className="gap-2 rounded-xl text-white bg-primary"
                         >
                           {leaveSubmitting && <Loader2 className="size-4 animate-spin" />}
                           Submit
@@ -977,14 +974,14 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                   </Dialog>
                 </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 bg-white">
+              <CardContent className="p-4 sm:p-6 bg-card text-card-foreground">
                 {leaveLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
-                    <span className="ml-2 text-sm text-gray-500">Loading...</span>
+                    <Loader2 className="size-6 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
                   </div>
                 ) : leaveRequests.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
+                  <div className="text-center py-12 text-muted-foreground">
                     <Plane className="size-12 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">No leave requests found</p>
                   </div>
@@ -993,7 +990,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     <div className="max-h-[500px] overflow-y-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-gray-50 hover:bg-gray-50">
+                          <TableRow className="bg-muted/50 hover:bg-muted/50">
                             <TableHead className="font-semibold">From</TableHead>
                             <TableHead className="font-semibold">To</TableHead>
                             <TableHead className="font-semibold">Remark</TableHead>
@@ -1002,7 +999,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                         </TableHeader>
                         <TableBody>
                           {leaveRequests.map((leave) => (
-                            <TableRow key={leave.id} className="hover:bg-blue-50/50 transition-colors">
+                            <TableRow key={leave.id} className="hover:bg-muted/50 transition-colors">
                               <TableCell className="font-medium">
                                 {formatDateDisplay(leave.fromDate)}
                               </TableCell>
@@ -1026,27 +1023,24 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "holidays" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4"
-                style={{
-                  background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
-                }}
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
               >
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-primary-foreground flex items-center gap-2">
                   <PartyPopper className="size-5" />
                   Holidays
                 </CardTitle>
-                <CardDescription className="text-blue-200">
+                <CardDescription className="text-primary-foreground/70">
                   List of upcoming and past holidays
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6 bg-white">
+              <CardContent className="p-4 sm:p-6 bg-card text-card-foreground">
                 {holidaysLoading ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="size-6 animate-spin" style={{ color: THEME.primary }} />
-                    <span className="ml-2 text-sm text-gray-500">Loading...</span>
+                    <Loader2 className="size-6 animate-spin text-primary" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
                   </div>
                 ) : holidays.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">
+                  <div className="text-center py-12 text-muted-foreground">
                     <PartyPopper className="size-12 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">No holidays found</p>
                   </div>
@@ -1055,7 +1049,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     <div className="max-h-[500px] overflow-y-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-gray-50 hover:bg-gray-50">
+                          <TableRow className="bg-muted/50 hover:bg-muted/50">
                             <TableHead className="font-semibold">Date</TableHead>
                             <TableHead className="font-semibold">Remark</TableHead>
                             <TableHead className="font-semibold">Applicable Classes</TableHead>
@@ -1065,7 +1059,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                           {holidays.map((holiday) => {
                             const classes = parseHolidayClasses(holiday.classes);
                             return (
-                              <TableRow key={holiday.id} className="hover:bg-blue-50/50 transition-colors">
+                              <TableRow key={holiday.id} className="hover:bg-muted/50 transition-colors">
                                 <TableCell className="font-medium">
                                   {formatDateDisplay(holiday.date)}
                                 </TableCell>
@@ -1075,8 +1069,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                                     {classes.map((cls) => (
                                       <span
                                         key={cls}
-                                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
-                                        style={{ backgroundColor: THEME.secondary }}
+                                        className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-secondary-foreground bg-secondary"
                                       >
                                         {cls}
                                       </span>
