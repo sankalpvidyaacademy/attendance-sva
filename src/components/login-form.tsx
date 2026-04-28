@@ -73,7 +73,7 @@ export function LoginForm() {
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 required
-                className="h-11 rounded-xl border-gray-200 focus:border-[#2F2FE4] focus:ring-[#2F2FE4]"
+                className="h-11 rounded-xl border-gray-200 focus:border-[#2F2FE4] focus:ring-[#2F2FE4] text-[#080616] placeholder:text-gray-400"
               />
             </div>
             <div className="space-y-2">
@@ -86,7 +86,7 @@ export function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="h-11 pr-12 rounded-xl border-gray-200 focus:border-[#2F2FE4] focus:ring-[#2F2FE4]"
+                  className="h-11 pr-12 rounded-xl border-gray-200 focus:border-[#2F2FE4] focus:ring-[#2F2FE4] text-[#080616] placeholder:text-gray-400"
                 />
                 <button
                   type="button"
