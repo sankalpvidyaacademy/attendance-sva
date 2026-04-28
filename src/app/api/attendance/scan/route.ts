@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import {
-  ROLES,
   ATTENDANCE_STATUS,
   getCurrentDateString,
   formatTime,
   formatDate,
 } from "@/lib/constants";
+
+// Minimum delay between scans in milliseconds (10 seconds)
+const MIN_SCAN_DELAY_MS = 10_000;
 
 export async function POST(request: Request) {
   try {
@@ -31,87 +33,112 @@ export async function POST(request: Request) {
     const timezone = settings?.timezone || "Asia/Kolkata";
     const timeFormat = settings?.timeFormat || "12h";
 
-    // Get current date
+    // Get current date using app timezone (not device/browser time)
     const date = dateParam || getCurrentDateString(timezone);
     const now = new Date();
 
-    // 5-second scan protection: check lastScanAt
+    // Use timezone-aware current time for all operations
+    const currentTimeStr = formatTime(now, timeFormat, timezone);
+    const currentDateStr = formatDate(now, timezone);
+
+    // ── Fetch existing record within a read to evaluate state ──
     const existingRecord = await db.attendance.findUnique({
       where: { userId_date: { userId, date } },
     });
 
+    // ── Strict scan delay enforcement (10 seconds) ──
     if (existingRecord?.lastScanAt) {
       const timeSinceLastScan =
         now.getTime() - new Date(existingRecord.lastScanAt).getTime();
-      if (timeSinceLastScan < 5000) {
+      if (timeSinceLastScan < MIN_SCAN_DELAY_MS) {
+        const remainingSeconds = Math.ceil(
+          (MIN_SCAN_DELAY_MS - timeSinceLastScan) / 1000
+        );
         return NextResponse.json(
           {
-            error: `Please wait ${Math.ceil((5000 - timeSinceLastScan) / 1000)} seconds before scanning again`,
+            error: `⏳ Please wait ${remainingSeconds} seconds before next scan`,
+            cooldownRemaining: remainingSeconds,
+            lastScanAt: existingRecord.lastScanAt,
           },
           { status: 429 }
         );
       }
     }
 
+    // ── Strict state machine: determine exactly what this scan should do ──
     let attendance;
-    let isCheckIn = false;
-    let isCheckOut = false;
+    let scanType: "checkIn" | "checkOut" | "alreadyCheckedIn" | "alreadyCheckedOut";
+    let message: string;
 
     if (!existingRecord) {
-      // No record exists: create with checkIn = now, status = PRESENT
-      attendance = await db.attendance.create({
-        data: {
-          userId,
-          date,
-          checkIn: now,
-          status: ATTENDANCE_STATUS.PRESENT,
-          lastScanAt: now,
-        },
+      // No record exists → Check-In only
+      attendance = await db.$transaction(async (tx) => {
+        return tx.attendance.create({
+          data: {
+            userId,
+            date,
+            checkIn: now,
+            status: ATTENDANCE_STATUS.PRESENT,
+            lastScanAt: now,
+          },
+        });
       });
-      isCheckIn = true;
-    } else if (existingRecord.checkIn && !existingRecord.checkOut) {
-      // Record exists with checkIn but no checkOut: set checkOut = now
-      attendance = await db.attendance.update({
-        where: { id: existingRecord.id },
-        data: {
-          checkOut: now,
-          lastScanAt: now,
-        },
-      });
-      isCheckOut = true;
+      scanType = "checkIn";
+      message = `✅ Check-In Successful`;
     } else if (existingRecord.checkIn && existingRecord.checkOut) {
-      // Already checked out
+      // Already checked in AND checked out → fully done for the day
+      scanType = "alreadyCheckedOut";
       return NextResponse.json(
-        { error: "Already checked out" },
+        {
+          error: "✓ Already Checked-Out for the day",
+          attendance: existingRecord,
+          type: "alreadyCheckedOut",
+          userName: user.name,
+          checkInTime: formatTime(new Date(existingRecord.checkIn), timeFormat, timezone),
+          checkOutTime: formatTime(new Date(existingRecord.checkOut), timeFormat, timezone),
+        },
         { status: 400 }
       );
-    } else {
-      // Edge case: record exists with no checkIn (e.g., created as ABSENT)
-      // Set checkIn
-      attendance = await db.attendance.update({
-        where: { id: existingRecord.id },
-        data: {
-          checkIn: now,
-          status: ATTENDANCE_STATUS.PRESENT,
-          lastScanAt: now,
-        },
+    } else if (existingRecord.checkIn && !existingRecord.checkOut) {
+      // Has checkIn but no checkOut → Check-Out only
+      attendance = await db.$transaction(async (tx) => {
+        return tx.attendance.update({
+          where: { id: existingRecord.id },
+          data: {
+            checkOut: now,
+            lastScanAt: now,
+          },
+        });
       });
-      isCheckIn = true;
+      scanType = "checkOut";
+      message = `🚪 Check-Out Successful`;
+    } else {
+      // Edge case: record exists with no checkIn (e.g., created as ABSENT by system)
+      // → Check-In
+      attendance = await db.$transaction(async (tx) => {
+        return tx.attendance.update({
+          where: { id: existingRecord.id },
+          data: {
+            checkIn: now,
+            status: ATTENDANCE_STATUS.PRESENT,
+            lastScanAt: now,
+          },
+        });
+      });
+      scanType = "checkIn";
+      message = `✅ Check-In Successful`;
     }
 
-    // Send Telegram notification if user has chatId
+    // ── Send Telegram notification if user has chatId (fire-and-forget) ──
     if (user.chatId) {
       try {
-        const timeStr = formatTime(now, timeFormat, timezone);
-        const dateStr = formatDate(now, timezone);
-
-        let message: string;
-        if (isCheckIn) {
-          message = `✅ Check-In Successful\nName: ${user.name}\nTime: ${timeStr}\nDate: ${dateStr}`;
-        } else if (isCheckOut) {
-          message = `🚪 Check-Out Successful\nName: ${user.name}\nTime: ${timeStr}\nDate: ${dateStr}`;
+        let telegramMessage: string;
+        if (scanType === "checkIn") {
+          telegramMessage = `✅ Check-In Successful\nName: ${user.name}\nTime: ${currentTimeStr}\nDate: ${currentDateStr}`;
+        } else if (scanType === "checkOut") {
+          telegramMessage = `🚪 Check-Out Successful\nName: ${user.name}\nTime: ${currentTimeStr}\nDate: ${currentDateStr}`;
         } else {
-          message = `📋 Attendance Updated\nName: ${user.name}\nTime: ${timeStr}\nDate: ${dateStr}`;
+          telegramMessage = `📋 Attendance Updated\nName: ${user.name}\nTime: ${currentTimeStr}\nDate: ${currentDateStr}`;
         }
 
         const botToken = settings?.telegramBotToken;
@@ -122,7 +149,7 @@ export async function POST(request: Request) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               chat_id: user.chatId,
-              text: message,
+              text: telegramMessage,
             }),
           }).catch((err) => {
             console.error("Telegram notification failed:", err);
@@ -134,14 +161,30 @@ export async function POST(request: Request) {
       }
     }
 
+    // ── Return comprehensive response ──
     return NextResponse.json({
-      attendance,
-      type: isCheckIn ? "checkIn" : isCheckOut ? "checkOut" : "update",
+      success: true,
+      message,
+      type: scanType,
+      userName: user.name,
+      userId: user.userId,
+      time: currentTimeStr,
+      date: currentDateStr,
+      attendance: {
+        id: attendance.id,
+        userId: attendance.userId,
+        date: attendance.date,
+        checkIn: attendance.checkIn,
+        checkOut: attendance.checkOut,
+        status: attendance.status,
+        lastScanAt: attendance.lastScanAt,
+      },
+      cooldownSeconds: MIN_SCAN_DELAY_MS / 1000,
     });
   } catch (error) {
     console.error("Attendance scan error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error. Please try again." },
       { status: 500 }
     );
   }

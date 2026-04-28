@@ -582,7 +582,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                     <ClipboardCheck className="size-5" />
                     My Attendance History
                   </CardTitle>
-                  <CardDescription className="text-muted-foreground dark:text-blue-200">
+                  <CardDescription className="text-foreground/60 dark:text-blue-200">
                     View your check-in / check-out records
                   </CardDescription>
                 </CardHeader>
@@ -703,7 +703,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                         <BookOpen className="size-5" />
                         Subject-wise Attendance
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground dark:text-blue-200">
+                      <CardDescription className="text-foreground/60 dark:text-blue-200">
                         Select a date to see subject attendance
                       </CardDescription>
                     </div>
@@ -777,7 +777,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                         <BarChart3 className="size-5" />
                         Monthly Summary
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground dark:text-blue-200">
+                      <CardDescription className="text-foreground/60 dark:text-blue-200">
                         Attendance breakdown for the selected month
                       </CardDescription>
                     </div>
@@ -801,7 +801,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                       {total > 0 && (
                         <div className="mb-5">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-muted-foreground">Attendance Rate</span>
+                            <span className="text-sm font-medium text-foreground/60">Attendance Rate</span>
                             <span className="text-lg font-bold text-primary">
                               {presentPercent}%
                             </span>
@@ -819,21 +819,21 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                       )}
 
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="rounded-xl border-2 border-emerald-100 bg-emerald-50/50 p-4 text-center">
-                          <p className="text-3xl font-bold text-emerald-600">{summaryData.present}</p>
-                          <p className="text-sm text-emerald-700/70 mt-1 font-medium">Present</p>
+                        <div className="rounded-xl border-2 border-emerald-100 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10 p-4 text-center">
+                          <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">{summaryData.present}</p>
+                          <p className="text-sm text-emerald-700/70 dark:text-emerald-300 mt-1 font-medium">Present</p>
                         </div>
-                        <div className="rounded-xl border-2 border-red-100 bg-red-50/50 p-4 text-center">
-                          <p className="text-3xl font-bold text-red-600">{summaryData.absent}</p>
-                          <p className="text-sm text-red-700/70 mt-1 font-medium">Absent</p>
+                        <div className="rounded-xl border-2 border-red-100 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/10 p-4 text-center">
+                          <p className="text-3xl font-bold text-red-600 dark:text-red-400">{summaryData.absent}</p>
+                          <p className="text-sm text-red-700/70 dark:text-red-300 mt-1 font-medium">Absent</p>
                         </div>
-                        <div className="rounded-xl border-2 border-amber-100 bg-amber-50/50 p-4 text-center">
-                          <p className="text-3xl font-bold text-amber-600">{summaryData.leave}</p>
-                          <p className="text-sm text-amber-700/70 mt-1 font-medium">Leave</p>
+                        <div className="rounded-xl border-2 border-amber-100 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/10 p-4 text-center">
+                          <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">{summaryData.leave}</p>
+                          <p className="text-sm text-amber-700/70 dark:text-amber-300 mt-1 font-medium">Leave</p>
                         </div>
-                        <div className="rounded-xl border-2 border-purple-100 bg-purple-50/50 p-4 text-center">
-                          <p className="text-3xl font-bold text-purple-600">{summaryData.holiday}</p>
-                          <p className="text-sm text-purple-700/70 mt-1 font-medium">Holiday</p>
+                        <div className="rounded-xl border-2 border-purple-100 dark:border-purple-500/30 bg-purple-50/50 dark:bg-purple-500/10 p-4 text-center">
+                          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{summaryData.holiday}</p>
+                          <p className="text-sm text-purple-700/70 dark:text-purple-300 mt-1 font-medium">Holiday</p>
                         </div>
                       </div>
                     </>
@@ -855,7 +855,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                       <Plane className="size-5" />
                       My Leave Requests
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground dark:text-blue-200">
+                    <CardDescription className="text-foreground/60 dark:text-blue-200">
                       View and apply for leave
                     </CardDescription>
                   </div>
@@ -880,7 +880,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                       </DialogHeader>
                       <div className="space-y-4 py-2">
                         <div className="space-y-2">
-                          <Label className="font-medium text-gray-900">From Date</Label>
+                          <Label className="font-medium text-foreground">From Date</Label>
                           <Popover open={leaveFromPickerOpen} onOpenChange={setLeaveFromPickerOpen}>
                             <PopoverTrigger asChild>
                               <Button
@@ -904,7 +904,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                           </Popover>
                         </div>
                         <div className="space-y-2">
-                          <Label className="font-medium text-gray-900">To Date</Label>
+                          <Label className="font-medium text-foreground">To Date</Label>
                           <Popover open={leaveToPickerOpen} onOpenChange={setLeaveToPickerOpen}>
                             <PopoverTrigger asChild>
                               <Button
@@ -928,7 +928,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                           </Popover>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="leave-remark" className="font-medium text-gray-900">Remark</Label>
+                          <Label htmlFor="leave-remark" className="font-medium text-foreground">Remark</Label>
                           <Input
                             id="leave-remark"
                             placeholder="Reason for leave (optional)"
@@ -1014,7 +1014,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                   <PartyPopper className="size-5" />
                   Holidays
                 </CardTitle>
-                <CardDescription className="text-muted-foreground dark:text-blue-200">
+                <CardDescription className="text-foreground/60 dark:text-blue-200">
                   Holidays applicable to your class
                   {user.class && (
                     <span

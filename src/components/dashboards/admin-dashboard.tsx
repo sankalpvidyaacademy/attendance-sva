@@ -78,6 +78,8 @@ import {
   Menu,
   Sun,
   Moon,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 
 import jsPDF from "jspdf";
@@ -310,7 +312,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
             <h1 className="text-base font-bold text-foreground dark:text-white tracking-tight">
               Sankalp Attendance
             </h1>
-            <p className="text-[10px] text-muted-foreground dark:text-white/40">Admin Panel</p>
+            <p className="text-[10px] text-foreground/50 dark:text-white/40">Admin Panel</p>
           </div>
         </div>
 
@@ -326,7 +328,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
                   isActive
                     ? "text-primary-foreground"
-                    : "text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 hover:text-foreground dark:hover:text-white"
+                    : "text-foreground/60 dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 hover:text-foreground dark:hover:text-white"
                 }`}
                 style={isActive ? { background: THEME.primary } : undefined}
               >
@@ -347,7 +349,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
             variant="ghost"
             size="sm"
             onClick={logout}
-            className="w-full justify-start text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
+            className="w-full justify-start text-foreground/60 dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
@@ -381,13 +383,13 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
               <h1 className="text-base font-bold text-foreground dark:text-white tracking-tight">
                 Sankalp Attendance
               </h1>
-              <p className="text-[10px] text-muted-foreground dark:text-white/40">Admin Panel</p>
+              <p className="text-[10px] text-foreground/50 dark:text-white/40">Admin Panel</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
+            className="text-foreground/60 dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
@@ -406,7 +408,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
                   isActive
                     ? "text-primary-foreground"
-                    : "text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 hover:text-foreground dark:hover:text-white"
+                    : "text-foreground/60 dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 hover:text-foreground dark:hover:text-white"
                 }`}
                 style={isActive ? { background: THEME.primary } : undefined}
               >
@@ -427,7 +429,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
             variant="ghost"
             size="sm"
             onClick={logout}
-            className="w-full justify-start text-muted-foreground dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
+            className="w-full justify-start text-foreground/60 dark:text-white/60 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
           >
             <LogOut className="h-4 w-4 mr-2" />
             Logout
@@ -447,7 +449,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden text-muted-foreground dark:text-white/70 dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
+                className="lg:hidden text-primary-foreground/70 dark:text-white/70 hover:text-primary-foreground dark:hover:text-white hover:bg-white/10"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu className="h-5 w-5" />
@@ -457,15 +459,15 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
               </h2>
             </div>
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full dark:bg-white/10 bg-muted">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 dark:bg-white/10">
                 <div className="h-2 w-2 rounded-full bg-green-400" />
-                <span className="text-sm text-foreground dark:text-white/80">{userProp.name}</span>
+                <span className="text-sm text-primary-foreground/80 dark:text-white/80">{userProp.name}</span>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="text-muted-foreground dark:text-white/70 dark:hover:text-white hover:bg-muted dark:hover:bg-white/10"
+                className="text-primary-foreground/70 dark:text-white/70 hover:text-primary-foreground dark:hover:text-white hover:bg-white/10"
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-5 w-5" />}
               </Button>
@@ -566,13 +568,23 @@ const PDF_COLORS = {
   headerText: "#FFFFFF",
   sectionHeader: "#2F2FE4",
   bodyText: "#333333",
+  lightText: "#666666",
   altRow: "#F5F5F5",
+  white: "#FFFFFF",
   border: "#CCCCCC",
-  present: "#22C55E",
-  absent: "#EF4444",
-  leave: "#F59E0B",
-  holiday: "#A855F7",
-  noClass: "#9CA3AF",
+  divider: "#D0D0D0",
+  present: "#16A34A",
+  presentBg: "#DCFCE7",
+  absent: "#DC2626",
+  absentBg: "#FEE2E2",
+  leave: "#D97706",
+  leaveBg: "#FEF3C7",
+  holiday: "#7C3AED",
+  holidayBg: "#EDE9FE",
+  noClass: "#6B7280",
+  noClassBg: "#F3F4F6",
+  footerLine: "#BBBBBB",
+  footerText: "#888888",
 };
 
 function getStatusColor(status: string): string {
@@ -586,13 +598,15 @@ function getStatusColor(status: string): string {
   return map[status] || PDF_COLORS.bodyText;
 }
 
-function truncateText(doc: jsPDF, text: string, maxWidth: number): string {
-  if (doc.getTextDimensions(text).w <= maxWidth) return text;
-  let truncated = text;
-  while (truncated.length > 0 && doc.getTextDimensions(truncated + "...").w > maxWidth) {
-    truncated = truncated.slice(0, -1);
-  }
-  return truncated.length < text.length ? truncated + "..." : text;
+function getStatusBgColor(status: string): string {
+  const map: Record<string, string> = {
+    PRESENT: PDF_COLORS.presentBg,
+    ABSENT: PDF_COLORS.absentBg,
+    LEAVE: PDF_COLORS.leaveBg,
+    HOLIDAY: PDF_COLORS.holidayBg,
+    NO_CLASS: PDF_COLORS.noClassBg,
+  };
+  return map[status] || PDF_COLORS.white;
 }
 
 function drawPDFFooter(doc: jsPDF) {
@@ -600,15 +614,17 @@ function drawPDFFooter(doc: jsPDF) {
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 15;
   const footY = pageH - 15;
-  doc.setDrawColor(PDF_COLORS.border);
+  doc.setDrawColor(PDF_COLORS.footerLine);
+  doc.setLineWidth(0.3);
   doc.line(margin, footY - 3, pageW - margin, footY - 3);
-  doc.setTextColor("#888888");
-  doc.setFontSize(8);
+  doc.setTextColor(PDF_COLORS.footerText);
+  doc.setFontSize(7);
   doc.setFont("helvetica", "italic");
   doc.text("Generated by Sankalp Attendance Management System", margin, footY);
   doc.text(new Date().toLocaleString(), pageW - margin, footY, { align: "right" });
 }
 
+// Smart table header with consistent styling
 function drawTableHeader(
   doc: jsPDF,
   y: number,
@@ -616,22 +632,33 @@ function drawTableHeader(
   colWidths: number[],
   startX: number
 ): number {
-  const rowH = 9;
-  const padding = 2;
-  doc.setFillColor(PDF_COLORS.sectionHeader);
-  doc.rect(startX, y, colWidths.reduce((a, b) => a + b, 0), rowH, "F");
+  const rowH = 10;
+  const padding = 3;
+  const tableW = colWidths.reduce((a, b) => a + b, 0);
+
+  // Header background with rounded-look
+  doc.setFillColor(PDF_COLORS.headerBg);
+  doc.rect(startX, y, tableW, rowH, "F");
+
+  // Header text
   doc.setTextColor(PDF_COLORS.headerText);
-  doc.setFontSize(9.5);
+  doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   let x = startX + padding;
   for (let i = 0; i < headers.length; i++) {
-    const maxW = colWidths[i] - padding * 2;
-    doc.text(truncateText(doc, headers[i], maxW), x, y + rowH / 2 + 1, { baseline: "middle" } as jsPDF.textOptions);
+    doc.text(headers[i], x, y + rowH / 2, { baseline: "middle" } as jsPDF.textOptions);
     x += colWidths[i];
   }
+
+  // Bottom border accent
+  doc.setDrawColor(PDF_COLORS.sectionHeader);
+  doc.setLineWidth(0.5);
+  doc.line(startX, y + rowH, startX + tableW, y + rowH);
+
   return y + rowH;
 }
 
+// Smart table row with auto text wrapping, dynamic row height, and page break handling
 function drawTableRow(
   doc: jsPDF,
   y: number,
@@ -641,37 +668,87 @@ function drawTableRow(
   isAlt: boolean,
   statusColumnIndex?: number
 ): number {
-  const rowH = 8;
-  const padding = 2;
+  const padding = 3;
+  const lineHeight = 4; // mm per line of text at 8pt
+  const minRowH = 10;
   const tableW = colWidths.reduce((a, b) => a + b, 0);
+  const bottomMargin = 25;
 
-  if (y + rowH > doc.internal.pageSize.getHeight() - 25) {
+  // Step 1: Calculate how many lines each cell needs using splitTextToSize
+  doc.setFontSize(8);
+  const cellLines: string[][] = [];
+  let maxLines = 0;
+
+  for (let i = 0; i < cells.length; i++) {
+    const maxW = colWidths[i] - padding * 2;
+    const text = cells[i] || "-";
+    const lines = doc.splitTextToSize(text, maxW);
+    cellLines.push(lines);
+    if (lines.length > maxLines) maxLines = lines.length;
+  }
+
+  // Step 2: Calculate dynamic row height
+  const rowH = Math.max(minRowH, maxLines * lineHeight + padding * 2);
+
+  // Step 3: Check if row fits on current page
+  if (y + rowH > doc.internal.pageSize.getHeight() - bottomMargin) {
     drawPDFFooter(doc);
     doc.addPage();
     y = 20;
   }
 
+  // Step 4: Draw row background
   if (isAlt) {
     doc.setFillColor(PDF_COLORS.altRow);
     doc.rect(startX, y, tableW, rowH, "F");
   }
 
+  // Step 5: Draw cell borders
   doc.setDrawColor(PDF_COLORS.border);
+  doc.setLineWidth(0.2);
+  // Outer border
   doc.rect(startX, y, tableW, rowH, "S");
+  // Vertical cell separators
+  let lineX = startX;
+  for (let i = 0; i < colWidths.length - 1; i++) {
+    lineX += colWidths[i];
+    doc.line(lineX, y, lineX, y + rowH);
+  }
 
+  // Step 6: Draw text in each cell (line by line, vertically centered)
   doc.setFontSize(8);
   let x = startX + padding;
   for (let i = 0; i < cells.length; i++) {
+    const lines = cellLines[i];
+    const textBlockH = lines.length * lineHeight;
+    // Center the text block vertically within the cell
+    const textStartY = y + (rowH - textBlockH) / 2 + lineHeight * 0.7;
+
     if (statusColumnIndex !== undefined && i === statusColumnIndex) {
-      doc.setTextColor(getStatusColor(cells[i]));
+      // Draw status with colored background pill
+      const statusText = lines[0] || "-";
+      const statusColor = getStatusColor(statusText);
+      const statusBg = getStatusBgColor(statusText);
+      const pillPadX = 2;
+      const pillPadY = 1;
+      const textW = doc.getTextWidth(statusText);
+      const pillW = textW + pillPadX * 2;
+      const pillH = lineHeight;
+      const pillX = x + (colWidths[i] - padding * 2 - pillW) / 2;
+      const pillY = y + (rowH - pillH) / 2;
+
+      doc.setFillColor(statusBg);
+      doc.roundedRect(pillX, pillY, pillW, pillH, 1.5, 1.5, "F");
+      doc.setTextColor(statusColor);
       doc.setFont("helvetica", "bold");
+      doc.text(statusText, pillX + pillPadX, pillY + pillH / 2, { baseline: "middle" } as jsPDF.textOptions);
     } else {
       doc.setTextColor(PDF_COLORS.bodyText);
       doc.setFont("helvetica", "normal");
+      for (let li = 0; li < lines.length; li++) {
+        doc.text(lines[li], x, textStartY + li * lineHeight);
+      }
     }
-    const maxW = colWidths[i] - padding * 2;
-    const displayText = truncateText(doc, cells[i], maxW);
-    doc.text(displayText, x, y + rowH / 2 + 1, { baseline: "middle" } as jsPDF.textOptions);
     x += colWidths[i];
   }
 
@@ -687,6 +764,54 @@ function checkPageSpace(doc: jsPDF, y: number, needed: number): number {
   return y;
 }
 
+// Draw a section divider with title
+function drawSectionDivider(doc: jsPDF, y: number, title: string, margin: number, pageW: number): number {
+  doc.setDrawColor(PDF_COLORS.divider);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageW - margin, y);
+  y += 2;
+  doc.setDrawColor(PDF_COLORS.sectionHeader);
+  doc.setLineWidth(0.8);
+  doc.line(margin, y, margin + 40, y);
+  y += 5;
+  doc.setTextColor(PDF_COLORS.sectionHeader);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(title, margin, y);
+  y += 7;
+  return y;
+}
+
+// Draw the common PDF header bar
+function drawPDFHeader(doc: jsPDF, title: string, subtitle: string, dateText: string) {
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // Header background
+  doc.setFillColor(PDF_COLORS.headerBg);
+  doc.rect(0, 0, pageW, 38, "F");
+
+  // Decorative accent line at bottom of header
+  doc.setDrawColor(PDF_COLORS.sectionHeader);
+  doc.setLineWidth(1);
+  doc.line(0, 38, pageW, 38);
+
+  // Org name
+  doc.setTextColor(PDF_COLORS.headerText);
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.text("Sankalp Vidya Academy", pageW / 2, 14, { align: "center" });
+
+  // Report type
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "normal");
+  doc.text(title, pageW / 2, 23, { align: "center" });
+
+  // Date/Month
+  doc.setFontSize(10);
+  doc.setTextColor("#CCCCCC");
+  doc.text(dateText, pageW / 2, 32, { align: "center" });
+}
+
 function generateDailyReportPDF(
   report: DailyReportData,
   dateStr: string,
@@ -699,54 +824,33 @@ function generateDailyReportPDF(
   const contentW = pageW - margin * 2;
 
   // ── Header ──
-  doc.setFillColor(PDF_COLORS.headerBg);
-  doc.rect(0, 0, pageW, 35, "F");
-  doc.setTextColor(PDF_COLORS.headerText);
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("Sankalp Vidya Academy", pageW / 2, 14, { align: "center" });
-  doc.setFontSize(13);
-  doc.setFont("helvetica", "normal");
-  doc.text("Daily Attendance Report", pageW / 2, 23, { align: "center" });
-
-  // Formatted date
   const d = new Date(dateStr + "T00:00:00");
   const formattedDate = d.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
-  doc.setFontSize(10);
-  doc.text(formattedDate, pageW / 2, 31, { align: "center" });
+  drawPDFHeader(doc, "Daily Attendance Report", formattedDate, dateStr);
 
-  let y = 45;
+  let y = 48;
 
   // ── Filters ──
   doc.setTextColor(PDF_COLORS.sectionHeader);
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("Filters Applied", margin, y);
-  y += 6;
-  doc.setTextColor(PDF_COLORS.bodyText);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Class: ${className === "ALL" ? "All Classes" : className}`, margin, y);
+  doc.text("Filters", margin, y);
   y += 5;
-  doc.text(`Role: ${roleFilter === "ALL" ? "All" : roleFilter}`, margin, y);
+  doc.setTextColor(PDF_COLORS.lightText);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  const classLabel = className === "ALL" ? "All Classes" : className;
+  const roleLabel = roleFilter === "ALL" ? "All" : roleFilter;
+  doc.text(`Class: ${classLabel}  |  Role: ${roleLabel}`, margin, y);
   y += 10;
 
   // ── Summary Table ──
-  y = checkPageSpace(doc, y, 30);
-  // Section divider
-  doc.setDrawColor(PDF_COLORS.sectionHeader);
-  doc.setLineWidth(0.5);
-  doc.line(margin, y, pageW - margin, y);
-  y += 4;
-  doc.setTextColor(PDF_COLORS.sectionHeader);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.text("Summary", margin, y);
-  y += 6;
+  y = checkPageSpace(doc, y, 35);
+  y = drawSectionDivider(doc, y, "Summary", margin, pageW);
 
   const sumHeaders = ["Total", "Present", "Absent", "Leave", "Holiday"];
   const sumWidths = [contentW / 5, contentW / 5, contentW / 5, contentW / 5, contentW / 5];
@@ -769,20 +873,11 @@ function generateDailyReportPDF(
 
   // ── QR Logs ──
   if (report.qrLogs && report.qrLogs.length > 0) {
-    y = checkPageSpace(doc, y, 30);
-    // Section divider
-    doc.setDrawColor(PDF_COLORS.sectionHeader);
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageW - margin, y);
-    y += 4;
-    doc.setTextColor(PDF_COLORS.sectionHeader);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text("QR Logs", margin, y);
-    y += 6;
+    y = checkPageSpace(doc, y, 35);
+    y = drawSectionDivider(doc, y, "QR Logs", margin, pageW);
 
     const qrHeaders = ["Name", "Role", "Check-In", "Check-Out", "Status"];
-    const qrWidths = [contentW * 0.3, contentW * 0.15, contentW * 0.18, contentW * 0.18, contentW * 0.19];
+    const qrWidths = [contentW * 0.30, contentW * 0.14, contentW * 0.18, contentW * 0.18, contentW * 0.20];
     y = drawTableHeader(doc, y, qrHeaders, qrWidths, margin);
     report.qrLogs.forEach((log, i) => {
       y = drawTableRow(
@@ -800,27 +895,18 @@ function generateDailyReportPDF(
 
   // ── Student Report ──
   if (report.studentReport.length > 0) {
-    y = checkPageSpace(doc, y, 30);
-    // Section divider
-    doc.setDrawColor(PDF_COLORS.sectionHeader);
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageW - margin, y);
-    y += 4;
-    doc.setTextColor(PDF_COLORS.sectionHeader);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Student Report (${report.studentReport.length})`, margin, y);
-    y += 6;
+    y = checkPageSpace(doc, y, 35);
+    y = drawSectionDivider(doc, y, `Student Report (${report.studentReport.length})`, margin, pageW);
 
-    const sHeaders = ["Name", "ID", "Class", "In", "Out", "Status", "Subjects"];
+    const sHeaders = ["Name", "ID", "Class", "Check-In", "Check-Out", "Status", "Subjects"];
     const sWidths = [
-      contentW * 0.24,
-      contentW * 0.12,
+      contentW * 0.22,
+      contentW * 0.11,
       contentW * 0.09,
-      contentW * 0.1,
-      contentW * 0.1,
+      contentW * 0.11,
+      contentW * 0.11,
       contentW * 0.12,
-      contentW * 0.23,
+      contentW * 0.24,
     ];
     y = drawTableHeader(doc, y, sHeaders, sWidths, margin);
     report.studentReport.forEach((rec, i) => {
@@ -850,17 +936,8 @@ function generateDailyReportPDF(
 
   // ── Teacher Report ──
   if (report.teacherReport.length > 0) {
-    y = checkPageSpace(doc, y, 30);
-    // Section divider
-    doc.setDrawColor(PDF_COLORS.sectionHeader);
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageW - margin, y);
-    y += 4;
-    doc.setTextColor(PDF_COLORS.sectionHeader);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Teacher Report (${report.teacherReport.length})`, margin, y);
-    y += 6;
+    y = checkPageSpace(doc, y, 35);
+    y = drawSectionDivider(doc, y, `Teacher Report (${report.teacherReport.length})`, margin, pageW);
 
     const tHeaders = ["Name", "ID", "Check-In", "Check-Out", "Status", "Subjects"];
     const tWidths = [contentW * 0.26, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.18];
@@ -901,67 +978,54 @@ function generateMonthlyReportPDF(
   const contentW = pageW - margin * 2;
 
   // ── Header ──
-  doc.setFillColor(PDF_COLORS.headerBg);
-  doc.rect(0, 0, pageW, 35, "F");
-  doc.setTextColor(PDF_COLORS.headerText);
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("Sankalp Vidya Academy", pageW / 2, 14, { align: "center" });
-  doc.setFontSize(13);
-  doc.setFont("helvetica", "normal");
-  doc.text("Monthly Attendance Report", pageW / 2, 23, { align: "center" });
-
-  // Formatted month
   const [yr, mn] = monthStr.split("-");
   const monthDate = new Date(parseInt(yr), parseInt(mn) - 1, 1);
   const formattedMonth = monthDate.toLocaleDateString("en-IN", {
     month: "long",
     year: "numeric",
   });
-  doc.setFontSize(10);
-  doc.text(formattedMonth, pageW / 2, 31, { align: "center" });
+  drawPDFHeader(doc, "Monthly Attendance Report", formattedMonth, monthStr);
 
-  let y = 45;
+  let y = 48;
 
   // ── Filters ──
   doc.setTextColor(PDF_COLORS.sectionHeader);
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("Filters Applied", margin, y);
-  y += 6;
-  doc.setTextColor(PDF_COLORS.bodyText);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Class: ${className === "ALL" ? "All Classes" : className}`, margin, y);
+  doc.text("Filters", margin, y);
   y += 5;
-  doc.text(`Role: ${roleFilter === "ALL" ? "All" : roleFilter}`, margin, y);
+  doc.setTextColor(PDF_COLORS.lightText);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "normal");
+  const classLabel = className === "ALL" ? "All Classes" : className;
+  const roleLabel = roleFilter === "ALL" ? "All" : roleFilter;
+  doc.text(`Class: ${classLabel}  |  Role: ${roleLabel}`, margin, y);
   y += 10;
 
   const allRecords = [...report.studentReport, ...report.teacherReport];
 
   allRecords.forEach((rec) => {
-    y = checkPageSpace(doc, y, 50);
+    y = checkPageSpace(doc, y, 55);
 
-    // Section divider
-    doc.setDrawColor(PDF_COLORS.sectionHeader);
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageW - margin, y);
-    y += 4;
+    // User section divider
+    y = drawSectionDivider(doc, y, `${rec.name} (${rec.userId})`, margin, pageW);
 
-    // User header bar (10mm tall)
+    // User info bar
+    const infoBarH = 10;
     doc.setFillColor(PDF_COLORS.sectionHeader);
     doc.setTextColor(PDF_COLORS.headerText);
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.rect(margin, y, contentW, 10, "F");
-    doc.text(`${rec.name} (${rec.userId})`, margin + 3, y + 10 / 2 + 1, { baseline: "middle" } as jsPDF.textOptions);
-    const roleLabel = rec.class ? `Class: ${rec.class}` : "Teacher";
+    doc.roundedRect(margin, y, contentW, infoBarH, 2, 2, "F");
+    const recRoleLabel = rec.class ? `Class: ${rec.class}` : "Teacher";
+    doc.text(`${rec.name}`, margin + 4, y + infoBarH / 2, { baseline: "middle" } as jsPDF.textOptions);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.text(roleLabel, pageW - margin - 3, y + 10 / 2 + 1, { align: "right", baseline: "middle" } as jsPDF.textOptions);
-    y += 12;
+    doc.text(recRoleLabel, margin + contentW - 4, y + infoBarH / 2, { align: "right", baseline: "middle" } as jsPDF.textOptions);
+    y += infoBarH + 4;
 
     // Summary row
-    y = checkPageSpace(doc, y, 25);
+    y = checkPageSpace(doc, y, 28);
     const sumHeaders = ["Total Days", "Present", "Absent", "Leave", "Holiday"];
     const sumW = [contentW / 5, contentW / 5, contentW / 5, contentW / 5, contentW / 5];
     y = drawTableHeader(doc, y, sumHeaders, sumW, margin);
@@ -983,16 +1047,16 @@ function generateMonthlyReportPDF(
 
     // Subject summary
     if (Object.keys(rec.subjectSummary).length > 0) {
-      y = checkPageSpace(doc, y, 30);
+      y = checkPageSpace(doc, y, 35);
       doc.setTextColor(PDF_COLORS.sectionHeader);
       doc.setFontSize(9);
       doc.setFont("helvetica", "bold");
       doc.text("Subject-wise Summary", margin, y);
-      y += 5;
+      y += 6;
 
       const subHeaders = ["Subject", "Present", "Absent", "Leave", "Holiday", "No Class"];
       const subW = [
-        contentW * 0.3,
+        contentW * 0.30,
         contentW * 0.14,
         contentW * 0.14,
         contentW * 0.14,
@@ -1022,7 +1086,7 @@ function generateMonthlyReportPDF(
       y += 8;
     }
 
-    y += 8;
+    y += 6;
   });
 
   // ── Footer (only on last page) ──
@@ -1170,7 +1234,7 @@ function StudentsTab() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex-1 w-full sm:max-w-sm">
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground dark:text-white/40" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-foreground/50 dark:text-white/40" />
             <Input
               placeholder="Search by name or ID..."
               value={search}
@@ -1189,11 +1253,11 @@ function StudentsTab() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground/50 dark:text-white/40" />
         </div>
       ) : students.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
+          <CardContent className="py-12 text-center text-foreground/50 dark:text-white/40">
             No students found. Click &quot;Add Student&quot; to create one.
           </CardContent>
         </ThemedCard>
@@ -1205,11 +1269,11 @@ function StudentsTab() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-card-foreground dark:text-white truncate">{s.name}</div>
-                    <div className="text-sm text-muted-foreground dark:text-white/50 mt-0.5">
-                      ID: <span className="font-mono text-muted-foreground dark:text-white/70">{s.userId}</span>
+                    <div className="text-sm text-foreground/60 dark:text-white/50 mt-0.5">
+                      ID: <span className="font-mono text-foreground/70 dark:text-white/70">{s.userId}</span>
                     </div>
-                    <div className="text-sm text-muted-foreground dark:text-white/50">
-                      Class: <span className="text-muted-foreground dark:text-white/70">{s.class || "-"}</span>
+                    <div className="text-sm text-foreground/60 dark:text-white/50">
+                      Class: <span className="text-foreground/70 dark:text-white/70">{s.class || "-"}</span>
                     </div>
                     {s.subjects && Array.isArray(s.subjects) && s.subjects.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -1225,12 +1289,12 @@ function StudentsTab() {
                       </div>
                     )}
                     {s.phone && (
-                      <div className="text-sm text-muted-foreground dark:text-white/50 mt-1">
-                        Phone: <span className="text-muted-foreground dark:text-white/70">{s.phone}</span>
+                      <div className="text-sm text-foreground/60 dark:text-white/50 mt-1">
+                        Phone: <span className="text-foreground/70 dark:text-white/70">{s.phone}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-muted-foreground dark:text-white/40">Password:</span>
+                      <span className="text-xs text-foreground/50 dark:text-white/40">Password:</span>
                       <span className="text-xs font-mono text-foreground dark:text-white/80">
                         {visiblePasswords[s.userId]
                           ? s.plainPassword || "Not available"
@@ -1239,7 +1303,7 @@ function StudentsTab() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-muted dark:hover:bg-white/10 text-muted-foreground dark:text-white/50 dark:hover:text-white/80"
+                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-muted dark:hover:bg-white/10 text-foreground/60 dark:text-white/50 dark:hover:text-white/80"
                         onClick={() => togglePasswordVisibility(s.userId)}
                       >
                         {visiblePasswords[s.userId] ? (
@@ -1254,7 +1318,7 @@ function StudentsTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="dark:border-white/10 text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 min-h-[44px] min-w-[44px] rounded-xl"
+                      className="dark:border-white/10 text-foreground/70 dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => handleEdit(s)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -1285,7 +1349,7 @@ function StudentsTab() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteStudent} onOpenChange={() => setDeleteStudent(null)}>
-        <DialogContent className="bg-white">
+        <DialogContent className="dark:bg-popover">
           <DialogHeader>
             <DialogTitle>Delete Student</DialogTitle>
             <DialogDescription>
@@ -1309,7 +1373,7 @@ function StudentsTab() {
         open={!!createdCredentials}
         onOpenChange={() => setCreatedCredentials(null)}
       >
-        <DialogContent className="bg-white">
+        <DialogContent className="dark:bg-popover">
           <DialogHeader>
             <DialogTitle>Student Created Successfully</DialogTitle>
             <DialogDescription>
@@ -1361,7 +1425,7 @@ function StudentFormDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="dark:bg-popover max-h-[90vh] overflow-y-auto">
         <StudentFormContent student={student} onSubmit={onSubmit} onCancel={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
@@ -1668,7 +1732,7 @@ function TeachersTab() {
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex-1 w-full sm:max-w-sm">
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground dark:text-white/40" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-foreground/50 dark:text-white/40" />
             <Input
               placeholder="Search by name or ID..."
               value={search}
@@ -1687,11 +1751,11 @@ function TeachersTab() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground/50 dark:text-white/40" />
         </div>
       ) : teachers.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
+          <CardContent className="py-12 text-center text-foreground/50 dark:text-white/40">
             No teachers found. Click &quot;Add Teacher&quot; to create one.
           </CardContent>
         </ThemedCard>
@@ -1703,8 +1767,8 @@ function TeachersTab() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-card-foreground dark:text-white truncate">{t.name}</div>
-                    <div className="text-sm text-muted-foreground dark:text-white/50 mt-0.5">
-                      ID: <span className="font-mono text-muted-foreground dark:text-white/70">{t.userId}</span>
+                    <div className="text-sm text-foreground/60 dark:text-white/50 mt-0.5">
+                      ID: <span className="font-mono text-foreground/70 dark:text-white/70">{t.userId}</span>
                     </div>
                     {t.subjects && Array.isArray(t.subjects) && t.subjects.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
@@ -1720,12 +1784,12 @@ function TeachersTab() {
                       </div>
                     )}
                     {t.phone && (
-                      <div className="text-sm text-muted-foreground dark:text-white/50 mt-1">
-                        Phone: <span className="text-muted-foreground dark:text-white/70">{t.phone}</span>
+                      <div className="text-sm text-foreground/60 dark:text-white/50 mt-1">
+                        Phone: <span className="text-foreground/70 dark:text-white/70">{t.phone}</span>
                       </div>
                     )}
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-muted-foreground dark:text-white/40">Password:</span>
+                      <span className="text-xs text-foreground/50 dark:text-white/40">Password:</span>
                       <span className="text-xs font-mono text-foreground dark:text-white/80">
                         {visiblePasswords[t.userId]
                           ? t.plainPassword || "Not available"
@@ -1734,7 +1798,7 @@ function TeachersTab() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-muted dark:hover:bg-white/10 text-muted-foreground dark:text-white/50 dark:hover:text-white/80"
+                        className="h-7 w-7 min-h-[28px] min-w-[28px] hover:bg-muted dark:hover:bg-white/10 text-foreground/60 dark:text-white/50 dark:hover:text-white/80"
                         onClick={() => togglePasswordVisibility(t.userId)}
                       >
                         {visiblePasswords[t.userId] ? (
@@ -1763,7 +1827,7 @@ function TeachersTab() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="dark:border-white/10 text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 min-h-[44px] min-w-[44px] rounded-xl"
+                      className="dark:border-white/10 text-foreground/70 dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 min-h-[44px] min-w-[44px] rounded-xl"
                       onClick={() => handleEdit(t)}
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -1794,7 +1858,7 @@ function TeachersTab() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteTeacher} onOpenChange={() => setDeleteTeacher(null)}>
-        <DialogContent className="bg-white">
+        <DialogContent className="dark:bg-popover">
           <DialogHeader>
             <DialogTitle>Delete Teacher</DialogTitle>
             <DialogDescription>
@@ -1818,7 +1882,7 @@ function TeachersTab() {
         open={!!createdCredentials}
         onOpenChange={() => setCreatedCredentials(null)}
       >
-        <DialogContent className="bg-white">
+        <DialogContent className="dark:bg-popover">
           <DialogHeader>
             <DialogTitle>Teacher Created Successfully</DialogTitle>
             <DialogDescription>
@@ -1887,7 +1951,7 @@ function TeacherFormDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="dark:bg-popover max-h-[90vh] overflow-y-auto">
         <TeacherFormContent teacher={teacher} onSubmit={onSubmit} onCancel={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
@@ -2044,7 +2108,13 @@ function QRScannerTab() {
   const [scanInput, setScanInput] = useState("");
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<{
+    success?: boolean;
+    message?: string;
     type: string;
+    userName?: string;
+    userId?: string;
+    time?: string;
+    date?: string;
     attendance: {
       id: string;
       userId: string;
@@ -2052,11 +2122,21 @@ function QRScannerTab() {
       checkIn: string | null;
       checkOut: string | null;
       status: string;
+      lastScanAt?: string | null;
     };
+    cooldownSeconds?: number;
+    // For already-checked-out error responses
+    checkInTime?: string;
+    checkOutTime?: string;
   } | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord[]>([]);
   const [loadingAttendance, setLoadingAttendance] = useState(true);
   const [cameraOpen, setCameraOpen] = useState(false);
+
+  // Cooldown state
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const cooldownTimerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -2077,13 +2157,54 @@ function QRScannerTab() {
     fetchTodayAttendance();
   }, [fetchTodayAttendance]);
 
+  // Cooldown countdown timer
+  useEffect(() => {
+    if (cooldownRemaining <= 0) {
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
+      return;
+    }
+    if (!cooldownTimerRef.current) {
+      cooldownTimerRef.current = setInterval(() => {
+        setCooldownRemaining((prev) => {
+          if (prev <= 1) {
+            if (cooldownTimerRef.current) {
+              clearInterval(cooldownTimerRef.current);
+              cooldownTimerRef.current = null;
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (cooldownTimerRef.current) {
+        clearInterval(cooldownTimerRef.current);
+        cooldownTimerRef.current = null;
+      }
+    };
+  }, [cooldownRemaining]);
+
+  // Start cooldown from a given number of seconds
+  const startCooldown = (seconds: number) => {
+    setCooldownRemaining(seconds);
+  };
+
   const handleScan = async () => {
     if (!scanInput.trim()) {
       toast.error("Please enter a User ID");
       return;
     }
+    if (cooldownRemaining > 0) {
+      toast.error(`Please wait ${cooldownRemaining} seconds before scanning again`);
+      return;
+    }
     setScanning(true);
     setScanResult(null);
+    setScanError(null);
     try {
       const res = await fetch("/api/attendance/scan", {
         method: "POST",
@@ -2093,24 +2214,84 @@ function QRScannerTab() {
       const data = await res.json();
       if (res.ok) {
         setScanResult(data);
-        toast.success(
-          data.type === "checkIn"
-            ? "Check-In successful!"
-            : data.type === "checkOut"
-              ? "Check-Out successful!"
-              : "Attendance updated!"
-        );
+        setScanError(null);
+
+        // Show appropriate toast
+        if (data.type === "checkIn") {
+          toast.success(`\u2705 Check-In Successful - ${data.userName || data.attendance?.userId} at ${data.time || ""}`);
+        } else if (data.type === "checkOut") {
+          toast.success(`\uD83D\uDEAA Check-Out Successful - ${data.userName || data.attendance?.userId} at ${data.time || ""}`);
+        } else {
+          toast.success(data.message || "Attendance updated!");
+        }
+
+        // Start cooldown
+        const cooldownSec = data.cooldownSeconds || 10;
+        startCooldown(cooldownSec);
+
         setScanInput("");
         fetchTodayAttendance();
       } else {
+        // Handle error responses
+        setScanError(data.error || "Scan failed");
+
+        // If it's a cooldown error, also start the cooldown timer
+        if (res.status === 429 && data.cooldownRemaining) {
+          startCooldown(data.cooldownRemaining);
+        }
+
+        // If it's "already checked out", show as info result (not error-style)
+        if (data.type === "alreadyCheckedOut" && data.attendance) {
+          setScanResult(data);
+          setScanError(null);
+        }
+
         toast.error(data.error || "Scan failed");
       }
     } catch {
+      setScanError("Failed to connect to server. Please try again.");
       toast.error("Failed to scan");
     } finally {
       setScanning(false);
     }
   };
+
+  // Determine the icon and color based on scan result
+  const getScanResultDisplay = () => {
+    if (!scanResult) return null;
+
+    const isCheckIn = scanResult.type === "checkIn";
+    const isCheckOut = scanResult.type === "checkOut";
+    const isAlreadyOut = scanResult.type === "alreadyCheckedOut";
+
+    let icon: React.ReactNode;
+    let title: string;
+    let bgClass: string;
+
+    if (isCheckIn) {
+      icon = <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />;
+      title = "\u2705 Check-In Successful";
+      bgClass = "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30";
+    } else if (isCheckOut) {
+      icon = <CheckCircle className="h-8 w-8 text-blue-600 dark:text-blue-400" />;
+      title = "\uD83D\uDEAA Check-Out Successful";
+      bgClass = "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30";
+    } else if (isAlreadyOut) {
+      icon = <XCircle className="h-8 w-8 text-amber-600 dark:text-amber-400" />;
+      title = "\u2713 Already Checked-Out";
+      bgClass = "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30";
+    } else {
+      icon = <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />;
+      title = scanResult.message || "Attendance Updated";
+      bgClass = "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30";
+    }
+
+    return { icon, title, bgClass };
+  };
+
+  const scanDisplay = getScanResultDisplay();
+
+  const isScanDisabled = scanning || cooldownRemaining > 0;
 
   return (
     <div className="space-y-6">
@@ -2128,26 +2309,71 @@ function QRScannerTab() {
                 placeholder="Enter or scan User ID"
                 value={scanInput}
                 onChange={(e) => setScanInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleScan()}
-                className="dark:bg-white/5 dark:border-white/10 dark:text-white placeholder:text-muted-foreground dark:text-white/30 focus:border-[#2F2FE4]"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isScanDisabled) handleScan();
+                }}
+                disabled={cooldownRemaining > 0}
+                className="dark:bg-white/5 dark:border-white/10 dark:text-white placeholder:text-muted-foreground dark:text-white/30 focus:border-[#2F2FE4] disabled:opacity-50"
               />
               <Button
                 onClick={handleScan}
-                disabled={scanning}
-                className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl min-w-[44px] min-h-[44px]"
+                disabled={isScanDisabled}
+                className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white rounded-xl min-w-[44px] min-h-[44px] disabled:opacity-50"
               >
                 {scanning ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
+                ) : cooldownRemaining > 0 ? (
+                  <span className="text-sm font-bold">{cooldownRemaining}</span>
                 ) : (
                   <ScanLine className="h-4 w-4" />
                 )}
               </Button>
             </div>
           </div>
+
+          {/* Cooldown Timer Banner */}
+          {cooldownRemaining > 0 && (
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
+              <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                  Cooldown Active
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Please wait <span className="font-bold text-base">{cooldownRemaining}</span> seconds before next scan
+                </p>
+              </div>
+              <div className="relative h-10 w-10">
+                <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
+                  <circle
+                    cx="18" cy="18" r="15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    className="text-amber-200 dark:text-amber-500/30"
+                  />
+                  <circle
+                    cx="18" cy="18" r="15"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeDasharray={`${(cooldownRemaining / 10) * 94.2} 94.2`}
+                    strokeLinecap="round"
+                    className="text-amber-500 dark:text-amber-400 transition-all duration-1000"
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-amber-600 dark:text-amber-400">
+                  {cooldownRemaining}
+                </span>
+              </div>
+            </div>
+          )}
+
           <Button
             variant="outline"
             className="w-full dark:border-white/10 text-muted-foreground dark:text-white/70 hover:bg-muted dark:hover:bg-white/10 rounded-xl min-h-[44px]"
             onClick={() => setCameraOpen(!cameraOpen)}
+            disabled={cooldownRemaining > 0}
           >
             <Camera className="h-4 w-4 mr-2" />
             {cameraOpen ? "Close Camera" : "Open Camera (Scan QR)"}
@@ -2157,45 +2383,83 @@ function QRScannerTab() {
               <CameraView onScan={(code) => { setScanInput(code); setCameraOpen(false); }} />
             </div>
           )}
-          {scanResult && (
-            <ThemedCard className="bg-[#2F2FE4]/10 border-[#2F2FE4]/20">
-              <CardContent className="p-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  {scanResult.type === "checkIn" ? (
-                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <XCircle className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+
+          {/* Scan Result Display */}
+          {scanDisplay && (
+            <div className={`rounded-xl border p-4 space-y-3 ${scanDisplay.bgClass}`}>
+              <div className="flex items-center gap-3">
+                {scanDisplay.icon}
+                <div>
+                  <p className="font-semibold text-lg text-card-foreground dark:text-white">
+                    {scanDisplay.title}
+                  </p>
+                  {scanResult.userName && (
+                    <p className="text-sm text-muted-foreground dark:text-white/70">
+                      {scanResult.userName}
+                    </p>
                   )}
-                  <span className="font-medium text-card-foreground dark:text-white">
-                    {scanResult.type === "checkIn"
-                      ? "Check-In"
-                      : scanResult.type === "checkOut"
-                        ? "Check-Out"
-                        : "Updated"}
-                  </span>
                 </div>
-                <div className="text-sm text-muted-foreground dark:text-white/70 space-y-1">
-                  <div>
-                    User ID:{" "}
-                    <span className="font-mono text-card-foreground dark:text-white">
-                      {scanResult.attendance.userId}
+              </div>
+              <Separator className="bg-border dark:bg-white/10" />
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                {scanResult.time && (
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground dark:text-white/50" />
+                    <span className="text-muted-foreground dark:text-white/50">Time:</span>
+                    <span className="font-mono font-medium text-card-foreground dark:text-white">
+                      {scanResult.time}
                     </span>
                   </div>
-                  <div>Date: {scanResult.attendance.date}</div>
-                  <div>
-                    Check-In:{" "}
-                    {formatTimeStr(scanResult.attendance.checkIn)}
+                )}
+                {scanResult.date && (
+                  <div className="flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5 text-muted-foreground dark:text-white/50" />
+                    <span className="text-muted-foreground dark:text-white/50">Date:</span>
+                    <span className="font-medium text-card-foreground dark:text-white">
+                      {scanResult.date}
+                    </span>
                   </div>
-                  <div>
-                    Check-Out:{" "}
-                    {formatTimeStr(scanResult.attendance.checkOut)}
+                )}
+                {scanResult.attendance?.checkIn && (
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    <span className="text-muted-foreground dark:text-white/50">In:</span>
+                    <span className="font-mono font-medium text-card-foreground dark:text-white">
+                      {formatTimeStr(scanResult.attendance.checkIn)}
+                    </span>
                   </div>
-                  <div className="pt-1">
-                    Status: {getStatusBadge(scanResult.attendance.status)}
+                )}
+                {scanResult.attendance?.checkOut ? (
+                  <div className="flex items-center gap-1.5">
+                    <XCircle className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    <span className="text-muted-foreground dark:text-white/50">Out:</span>
+                    <span className="font-mono font-medium text-card-foreground dark:text-white">
+                      {formatTimeStr(scanResult.attendance.checkOut)}
+                    </span>
                   </div>
-                </div>
-              </CardContent>
-            </ThemedCard>
+                ) : scanResult.type === "checkIn" ? (
+                  <div className="flex items-center gap-1.5">
+                    <XCircle className="h-3.5 w-3.5 text-muted-foreground dark:text-white/30" />
+                    <span className="text-muted-foreground dark:text-white/50">Out:</span>
+                    <span className="font-mono text-muted-foreground dark:text-white/30">Pending</span>
+                  </div>
+                ) : null}
+              </div>
+              <div className="pt-1">
+                {getStatusBadge(scanResult.attendance?.status || "PRESENT")}
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {scanError && !scanResult && (
+            <div className="rounded-xl border p-4 space-y-2 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30">
+              <div className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <span className="font-medium text-red-700 dark:text-red-300">Scan Failed</span>
+              </div>
+              <p className="text-sm text-red-600 dark:text-red-400">{scanError}</p>
+            </div>
           )}
         </CardContent>
       </ThemedCard>
@@ -2255,6 +2519,7 @@ function QRScannerTab() {
   );
 }
 
+
 // ─── Camera View (simplified) ────────────────────────────────────────────────
 
 function CameraView({ onScan }: { onScan: (code: string) => void }) {
@@ -2285,7 +2550,7 @@ function CameraView({ onScan }: { onScan: (code: string) => void }) {
 
   if (error) {
     return (
-      <div className="p-4 text-center text-sm text-muted-foreground dark:text-white/40 bg-muted dark:bg-white/5">
+      <div className="p-4 text-center text-sm text-foreground/50 dark:text-white/40 bg-muted dark:bg-white/5">
         {error}
       </div>
     );
@@ -2325,6 +2590,8 @@ function IDCardsTab() {
   const [search, setSearch] = useState("");
   const [selectedCard, setSelectedCard] = useState<IDCardData | null>(null);
   const [loadingCard, setLoadingCard] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const getCardColors = (role: string) =>
     role === "TEACHER" ? TEACHER_CARD : STUDENT_CARD;
@@ -2367,6 +2634,34 @@ function IDCardsTab() {
     if (selectedCard && selectedCard.user.userId === userId) {
       setSelectedCard(null);
       toast.success("Card removed from view");
+    }
+  };
+
+  const handleDeleteCard = () => {
+    setShowDeleteConfirm(false);
+    setSelectedCard(null);
+    toast.success("ID Card removed. You can regenerate it from the user list.");
+  };
+
+  const handleRegenerateCard = async () => {
+    if (!selectedCard) return;
+    const userId = selectedCard.user.userId;
+    const user = users.find((u) => u.userId === userId);
+    if (!user) return;
+    setRegenerating(true);
+    try {
+      const res = await fetch(`/api/id-card/${user.id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setSelectedCard(data);
+        toast.success("ID Card regenerated successfully");
+      } else {
+        toast.error(data.error || "Failed to regenerate ID card");
+      }
+    } catch {
+      toast.error("Failed to regenerate ID card");
+    } finally {
+      setRegenerating(false);
     }
   };
 
@@ -2594,7 +2889,7 @@ function IDCardsTab() {
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground dark:text-white/40" />
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-foreground/50 dark:text-white/40" />
         <Input
           placeholder="Search users..."
           value={search}
@@ -2605,11 +2900,11 @@ function IDCardsTab() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground/50 dark:text-white/40" />
         </div>
       ) : filteredUsers.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
+          <CardContent className="py-12 text-center text-foreground/50 dark:text-white/40">
             No users found.
           </CardContent>
         </ThemedCard>
@@ -2622,7 +2917,7 @@ function IDCardsTab() {
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="min-w-0">
                     <div className="font-semibold text-card-foreground dark:text-white truncate">{u.name}</div>
-                    <div className="text-sm text-muted-foreground dark:text-white/50">
+                    <div className="text-sm text-foreground/60 dark:text-white/50">
                       {u.userId} &middot;{" "}
                       <span style={{ color: cardColors.primary }}>{u.role}</span>
                       {u.class ? ` · ${u.class}` : ""}
@@ -2672,7 +2967,7 @@ function IDCardsTab() {
 
       {/* ID Card Preview Dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="bg-white max-w-md">
+        <DialogContent className="dark:bg-popover max-w-md">
           <DialogHeader>
             <DialogTitle>ID Card Preview</DialogTitle>
           </DialogHeader>
@@ -2761,13 +3056,13 @@ function IDCardsTab() {
                       }}
                     >
                       <div>
-                        <div className="text-[10px] text-muted-foreground dark:text-white/50 mb-0.5">User ID</div>
+                        <div className="text-[10px] text-foreground/60 dark:text-white/50 mb-0.5">User ID</div>
                         <div className="text-sm font-mono font-semibold text-card-foreground dark:text-white">
                           {selectedCard.user.userId}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[10px] text-muted-foreground dark:text-white/50 mb-0.5">Password</div>
+                        <div className="text-[10px] text-foreground/60 dark:text-white/50 mb-0.5">Password</div>
                         <div className="text-sm font-mono font-semibold text-card-foreground dark:text-white">
                           {selectedCard.user.password}
                         </div>
@@ -2793,7 +3088,7 @@ function IDCardsTab() {
                     </div>
 
                     {/* Footer */}
-                    <div className="mt-3 text-xs text-muted-foreground dark:text-white/40">
+                    <div className="mt-3 text-xs text-foreground/50 dark:text-white/40">
                       Scan QR code to mark attendance
                     </div>
                     <div
@@ -2807,18 +3102,64 @@ function IDCardsTab() {
               </div>
             );
           })()}
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="destructive"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full sm:w-auto"
+            >
+              <Trash2 className="h-4 w-4 mr-1" /> Delete Card
+            </Button>
+            <div className="flex-1 hidden sm:block" />
             <Button
               variant="outline"
               onClick={() => setSelectedCard(null)}
+              className="w-full sm:w-auto"
             >
               Close
             </Button>
             <Button
+              variant="outline"
+              onClick={handleRegenerateCard}
+              disabled={regenerating}
+              className="w-full sm:w-auto"
+            >
+              {regenerating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />} Regenerate
+            </Button>
+            <Button
               onClick={handleDownload}
-              className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white"
+              className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white w-full sm:w-auto"
             >
               <Download className="h-4 w-4 mr-1" /> Download JPG
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="dark:bg-popover max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Delete ID Card
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove this ID card? The user data will not be affected. You can regenerate the card anytime from the user list.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCard}
+            >
+              <Trash2 className="h-4 w-4 mr-1" /> Delete
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2882,7 +3223,7 @@ function LeaveTab({ adminUserId }: { adminUserId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Label className="text-muted-foreground dark:text-white/60 text-sm">Filter:</Label>
+        <Label className="text-foreground/60 dark:text-white/60 text-sm">Filter:</Label>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[140px] dark:bg-white/5 dark:border-white/10 dark:text-white">
             <SelectValue />
@@ -2898,11 +3239,11 @@ function LeaveTab({ adminUserId }: { adminUserId: string }) {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground/50 dark:text-white/40" />
         </div>
       ) : leaves.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
+          <CardContent className="py-12 text-center text-foreground/50 dark:text-white/40">
             No leave requests found.
           </CardContent>
         </ThemedCard>
@@ -2914,16 +3255,16 @@ function LeaveTab({ adminUserId }: { adminUserId: string }) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-card-foreground dark:text-white">{leave.user?.name || "-"}</div>
-                    <div className="text-sm text-muted-foreground dark:text-white/50">
+                    <div className="text-sm text-foreground/60 dark:text-white/50">
                       ID: {leave.user?.userId} &middot; {leave.user?.role}
                       {leave.user?.class ? ` · ${leave.user.class}` : ""}
                     </div>
-                    <div className="text-sm text-muted-foreground dark:text-white/70 mt-1">
+                    <div className="text-sm text-foreground/70 dark:text-white/70 mt-1">
                       {formatDateStr(leave.fromDate)} →{" "}
                       {formatDateStr(leave.toDate)}
                     </div>
                     {leave.remark && (
-                      <div className="text-sm text-muted-foreground dark:text-white/40 mt-1">
+                      <div className="text-sm text-foreground/50 dark:text-white/40 mt-1">
                         {leave.remark}
                       </div>
                     )}
@@ -3014,11 +3355,11 @@ function HolidaysTab() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
+          <Loader2 className="h-8 w-8 animate-spin text-foreground/50 dark:text-white/40" />
         </div>
       ) : holidays.length === 0 ? (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
+          <CardContent className="py-12 text-center text-foreground/50 dark:text-white/40">
             No holidays found. Click &quot;Add Holiday&quot; to create one.
           </CardContent>
         </ThemedCard>
@@ -3032,7 +3373,7 @@ function HolidaysTab() {
                     {formatDateStr(h.date)}
                   </div>
                   {h.remark && (
-                    <div className="text-sm text-muted-foreground dark:text-white/50">
+                    <div className="text-sm text-foreground/60 dark:text-white/50">
                       {h.remark}
                     </div>
                   )}
@@ -3074,7 +3415,7 @@ function HolidaysTab() {
 
       {/* Delete Confirmation */}
       <Dialog open={!!deleteHoliday} onOpenChange={() => setDeleteHoliday(null)}>
-        <DialogContent className="bg-white">
+        <DialogContent className="dark:bg-popover">
           <DialogHeader>
             <DialogTitle>Delete Holiday</DialogTitle>
             <DialogDescription>
@@ -3168,7 +3509,7 @@ function AddHolidayDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white max-h-[90vh] overflow-y-auto">
+      <DialogContent className="dark:bg-popover max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Holiday</DialogTitle>
           <DialogDescription>Add a holiday for selected classes.</DialogDescription>
@@ -3261,13 +3602,13 @@ function ReportsTab() {
         <TabsList className="dark:bg-white/5 bg-muted border dark:border-white/10 border-border">
           <TabsTrigger
             value="daily"
-            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg"
+            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-foreground/60 dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg"
           >
             Daily
           </TabsTrigger>
           <TabsTrigger
             value="monthly"
-            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg"
+            className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-foreground/60 dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg"
           >
             Monthly
           </TabsTrigger>
@@ -3339,7 +3680,7 @@ function DailyReport() {
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-end">
             <div className="space-y-2 flex-1">
-              <Label className="text-muted-foreground dark:text-white/60">Date</Label>
+              <Label className="text-foreground/60 dark:text-white/60">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -3362,7 +3703,7 @@ function DailyReport() {
               </Popover>
             </div>
             <div className="space-y-2">
-              <Label className="text-muted-foreground dark:text-white/60">Class</Label>
+              <Label className="text-foreground/60 dark:text-white/60">Class</Label>
               <Select value={className} onValueChange={setClassName}>
                 <SelectTrigger className="w-[150px] dark:bg-white/5 dark:border-white/10 dark:text-white">
                   <SelectValue />
@@ -3378,7 +3719,7 @@ function DailyReport() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-muted-foreground dark:text-white/60">Role</Label>
+              <Label className="text-foreground/60 dark:text-white/60">Role</Label>
               <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger className="w-[140px] dark:bg-white/5 dark:border-white/10 dark:text-white">
                   <SelectValue />
@@ -3426,11 +3767,11 @@ function DailyReport() {
               <CardContent className="p-4 text-center">
                 <div className="flex justify-center mb-2">
                   <div className="h-10 w-10 rounded-xl bg-muted dark:bg-white/10 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-muted-foreground dark:text-white/60" />
+                    <Users className="h-5 w-5 text-foreground/60 dark:text-white/60" />
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-card-foreground dark:text-white">{report.summary.total}</div>
-                <div className="text-xs text-muted-foreground dark:text-white/40">Total</div>
+                <div className="text-xs text-foreground/50 dark:text-white/40">Total</div>
               </CardContent>
             </ThemedCard>
             <ThemedCard>
@@ -3443,7 +3784,7 @@ function DailyReport() {
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {report.summary.present}
                 </div>
-                <div className="text-xs text-muted-foreground dark:text-white/40">Present</div>
+                <div className="text-xs text-foreground/50 dark:text-white/40">Present</div>
               </CardContent>
             </ThemedCard>
             <ThemedCard>
@@ -3456,7 +3797,7 @@ function DailyReport() {
                 <div className="text-2xl font-bold text-red-600 dark:text-red-400">
                   {report.summary.absent}
                 </div>
-                <div className="text-xs text-muted-foreground dark:text-white/40">Absent</div>
+                <div className="text-xs text-foreground/50 dark:text-white/40">Absent</div>
               </CardContent>
             </ThemedCard>
             <ThemedCard>
@@ -3469,7 +3810,7 @@ function DailyReport() {
                 <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                   {report.summary.leave}
                 </div>
-                <div className="text-xs text-muted-foreground dark:text-white/40">Leave</div>
+                <div className="text-xs text-foreground/50 dark:text-white/40">Leave</div>
               </CardContent>
             </ThemedCard>
             <ThemedCard className="col-span-2 sm:col-span-1">
@@ -3482,7 +3823,7 @@ function DailyReport() {
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   {report.summary.holiday}
                 </div>
-                <div className="text-xs text-muted-foreground dark:text-white/40">Holiday</div>
+                <div className="text-xs text-foreground/50 dark:text-white/40">Holiday</div>
               </CardContent>
             </ThemedCard>
           </div>
@@ -3509,20 +3850,20 @@ function DailyReport() {
                   <Table>
                     <TableHeader>
                       <TableRow className="dark:border-white/10 border-border hover:bg-transparent">
-                        <TableHead className="text-muted-foreground dark:text-white/50">Name</TableHead>
-                        <TableHead className="text-muted-foreground dark:text-white/50">Role</TableHead>
-                        <TableHead className="text-muted-foreground dark:text-white/50">Check-In</TableHead>
-                        <TableHead className="text-muted-foreground dark:text-white/50">Check-Out</TableHead>
-                        <TableHead className="text-muted-foreground dark:text-white/50">Status</TableHead>
+                        <TableHead className="text-foreground/60 dark:text-white/50">Name</TableHead>
+                        <TableHead className="text-foreground/60 dark:text-white/50">Role</TableHead>
+                        <TableHead className="text-foreground/60 dark:text-white/50">Check-In</TableHead>
+                        <TableHead className="text-foreground/60 dark:text-white/50">Check-Out</TableHead>
+                        <TableHead className="text-foreground/60 dark:text-white/50">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {report.qrLogs.map((log, i) => (
                         <TableRow key={`${log.userId}-${i}`} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
                           <TableCell className="font-medium text-card-foreground dark:text-white">{log.name}</TableCell>
-                          <TableCell className="text-muted-foreground dark:text-white/70 text-sm">{log.role}</TableCell>
-                          <TableCell className="text-muted-foreground dark:text-white/70 text-sm">{formatTimeStr(log.checkIn)}</TableCell>
-                          <TableCell className="text-muted-foreground dark:text-white/70 text-sm">{formatTimeStr(log.checkOut)}</TableCell>
+                          <TableCell className="text-foreground/70 dark:text-white/70 text-sm">{log.role}</TableCell>
+                          <TableCell className="text-foreground/70 dark:text-white/70 text-sm">{formatTimeStr(log.checkIn)}</TableCell>
+                          <TableCell className="text-foreground/70 dark:text-white/70 text-sm">{formatTimeStr(log.checkOut)}</TableCell>
                           <TableCell>{getStatusBadge(log.status)}</TableCell>
                         </TableRow>
                       ))}
@@ -3540,7 +3881,7 @@ function DailyReport() {
                 {report.studentReport.length > 0 && (
                   <TabsTrigger
                     value="students"
-                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
+                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-foreground/60 dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
                   >
                     <GraduationCap className="h-3.5 w-3.5" /> Students ({report.studentReport.length})
                   </TabsTrigger>
@@ -3548,7 +3889,7 @@ function DailyReport() {
                 {report.teacherReport.length > 0 && (
                   <TabsTrigger
                     value="teachers"
-                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
+                    className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-foreground/60 dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
                   >
                     <Users className="h-3.5 w-3.5" /> Teachers ({report.teacherReport.length})
                   </TabsTrigger>
@@ -3563,23 +3904,23 @@ function DailyReport() {
                         <Table>
                           <TableHeader>
                             <TableRow className="dark:border-white/10 border-border hover:bg-transparent">
-                              <TableHead className="text-muted-foreground dark:text-white/50">Name</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">ID</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Class</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Check-In</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Check-Out</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Status</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Subjects</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Name</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">ID</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Class</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Check-In</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Check-Out</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Status</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Subjects</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {report.studentReport.map((rec) => (
                               <TableRow key={rec.userId} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
                                 <TableCell className="font-medium text-card-foreground dark:text-white">{rec.name}</TableCell>
-                                <TableCell className="font-mono text-xs text-muted-foreground dark:text-white/70">{rec.userId}</TableCell>
-                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{rec.class || "-"}</TableCell>
-                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
-                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
+                                <TableCell className="font-mono text-xs text-foreground/70 dark:text-white/70">{rec.userId}</TableCell>
+                                <TableCell className="text-sm text-foreground/70 dark:text-white/70">{rec.class || "-"}</TableCell>
+                                <TableCell className="text-sm text-foreground/70 dark:text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
+                                <TableCell className="text-sm text-foreground/70 dark:text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
                                 <TableCell>{getStatusBadge(rec.status)}</TableCell>
                                 <TableCell>
                                   {rec.subjects && rec.subjects.length > 0 ? (
@@ -3587,7 +3928,7 @@ function DailyReport() {
                                       {rec.subjects.map((sub, i) => (
                                         <span
                                           key={i}
-                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted dark:bg-white/5 text-muted-foreground dark:text-white/50"
+                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted dark:bg-white/5 text-foreground/60 dark:text-white/50"
                                           title={`${sub.subject}: ${sub.status}`}
                                         >
                                           {sub.subject.charAt(0)}
@@ -3597,7 +3938,7 @@ function DailyReport() {
                                             sub.status === "LEAVE" ? "text-amber-600 dark:text-amber-400" :
                                             sub.status === "HOLIDAY" ? "text-purple-600 dark:text-purple-400" :
                                             sub.status === "NO_CLASS" ? "text-gray-600 dark:text-gray-400" :
-                                            "text-muted-foreground dark:text-white/40"
+                                            "text-foreground/50 dark:text-white/40"
                                           }`}>
                                             {sub.status.charAt(0)}
                                           </span>
@@ -3626,21 +3967,21 @@ function DailyReport() {
                         <Table>
                           <TableHeader>
                             <TableRow className="dark:border-white/10 border-border hover:bg-transparent">
-                              <TableHead className="text-muted-foreground dark:text-white/50">Name</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">ID</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Check-In</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Check-Out</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Status</TableHead>
-                              <TableHead className="text-muted-foreground dark:text-white/50">Subjects</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Name</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">ID</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Check-In</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Check-Out</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Status</TableHead>
+                              <TableHead className="text-foreground/60 dark:text-white/50">Subjects</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {report.teacherReport.map((rec) => (
                               <TableRow key={rec.userId} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
                                 <TableCell className="font-medium text-card-foreground dark:text-white">{rec.name}</TableCell>
-                                <TableCell className="font-mono text-xs text-muted-foreground dark:text-white/70">{rec.userId}</TableCell>
-                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
-                                <TableCell className="text-sm text-muted-foreground dark:text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
+                                <TableCell className="font-mono text-xs text-foreground/70 dark:text-white/70">{rec.userId}</TableCell>
+                                <TableCell className="text-sm text-foreground/70 dark:text-white/70">{formatTimeStr(rec.checkIn)}</TableCell>
+                                <TableCell className="text-sm text-foreground/70 dark:text-white/70">{formatTimeStr(rec.checkOut)}</TableCell>
                                 <TableCell>{getStatusBadge(rec.status)}</TableCell>
                                 <TableCell>
                                   {rec.subjects && rec.subjects.length > 0 ? (
@@ -3648,7 +3989,7 @@ function DailyReport() {
                                       {rec.subjects.map((sub, i) => (
                                         <span
                                           key={i}
-                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted dark:bg-white/5 text-muted-foreground dark:text-white/50"
+                                          className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted dark:bg-white/5 text-foreground/60 dark:text-white/50"
                                           title={`${sub.subject}: ${sub.status}`}
                                         >
                                           {sub.subject.charAt(0)}
@@ -3656,7 +3997,7 @@ function DailyReport() {
                                             sub.status === "PRESENT" ? "text-green-600 dark:text-green-400" :
                                             sub.status === "ABSENT" ? "text-red-600 dark:text-red-400" :
                                             sub.status === "NO_CLASS" ? "text-gray-600 dark:text-gray-400" :
-                                            "text-muted-foreground dark:text-white/40"
+                                            "text-foreground/50 dark:text-white/40"
                                           }`}>
                                             {sub.status.charAt(0)}
                                           </span>
@@ -3681,7 +4022,7 @@ function DailyReport() {
 
           {report.studentReport.length === 0 && report.teacherReport.length === 0 && (
             <ThemedCard>
-              <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
+              <CardContent className="py-12 text-center text-foreground/50 dark:text-white/40">
                 No data found for the selected filters.
               </CardContent>
             </ThemedCard>
@@ -3759,7 +4100,7 @@ function MonthlyReport() {
             <div className="flex items-center justify-between">
               <div className="text-left min-w-0">
                 <div className="font-semibold text-card-foreground dark:text-white">{rec.name}</div>
-                <div className="text-sm text-muted-foreground dark:text-white/50">
+                <div className="text-sm text-foreground/60 dark:text-white/50">
                   {rec.userId} &middot; {rec.class || "-"}
                 </div>
               </div>
@@ -3779,7 +4120,7 @@ function MonthlyReport() {
                   </span>
                 </div>
                 <ChevronDown
-                  className={`h-4 w-4 text-muted-foreground dark:text-white/50 transition-transform ${
+                  className={`h-4 w-4 text-foreground/60 dark:text-white/50 transition-transform ${
                     expandedUser === rec.userId ? "rotate-180" : ""
                   }`}
                 />
@@ -3850,8 +4191,8 @@ function MonthlyReport() {
                 <ScrollArea className="max-h-32">
                   <div className="space-y-1">
                     {rec.qrLogs.map((log, i) => (
-                      <div key={i} className="flex items-center gap-3 text-xs text-muted-foreground dark:text-white/50 bg-muted dark:bg-white/5 rounded-lg px-3 py-1.5">
-                        <span className="text-muted-foreground dark:text-white/70">{log.date}</span>
+                      <div key={i} className="flex items-center gap-3 text-xs text-foreground/60 dark:text-white/50 bg-muted dark:bg-white/5 rounded-lg px-3 py-1.5">
+                        <span className="text-foreground/70 dark:text-white/70">{log.date}</span>
                         <span>In: {formatTimeStr(log.checkIn)}</span>
                         <span>Out: {formatTimeStr(log.checkOut)}</span>
                       </div>
@@ -3919,7 +4260,7 @@ function MonthlyReport() {
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-end">
             <div className="space-y-2 flex-1">
-              <Label className="text-muted-foreground dark:text-white/60">Month (YYYY-MM)</Label>
+              <Label className="text-foreground/60 dark:text-white/60">Month (YYYY-MM)</Label>
               <Input
                 type="month"
                 value={month}
@@ -3928,7 +4269,7 @@ function MonthlyReport() {
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-muted-foreground dark:text-white/60">Class</Label>
+              <Label className="text-foreground/60 dark:text-white/60">Class</Label>
               <Select value={className} onValueChange={setClassName}>
                 <SelectTrigger className="w-[150px] dark:bg-white/5 dark:border-white/10 dark:text-white">
                   <SelectValue />
@@ -3944,7 +4285,7 @@ function MonthlyReport() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-muted-foreground dark:text-white/60">Role</Label>
+              <Label className="text-foreground/60 dark:text-white/60">Role</Label>
               <Select value={roleFilter} onValueChange={setRoleFilter}>
                 <SelectTrigger className="w-[140px] dark:bg-white/5 dark:border-white/10 dark:text-white">
                   <SelectValue />
@@ -3990,7 +4331,7 @@ function MonthlyReport() {
             {allStudents.length > 0 && (
               <TabsTrigger
                 value="students"
-                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
+                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-foreground/60 dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
               >
                 <GraduationCap className="h-3.5 w-3.5" /> Students ({allStudents.length})
               </TabsTrigger>
@@ -3998,7 +4339,7 @@ function MonthlyReport() {
             {allTeachers.length > 0 && (
               <TabsTrigger
                 value="teachers"
-                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-muted-foreground dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
+                className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-foreground/60 dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
               >
                 <Users className="h-3.5 w-3.5" /> Teachers ({allTeachers.length})
               </TabsTrigger>
@@ -4025,7 +4366,7 @@ function MonthlyReport() {
 
       {report && allStudents.length === 0 && allTeachers.length === 0 && (
         <ThemedCard>
-          <CardContent className="py-12 text-center text-muted-foreground dark:text-white/40">
+          <CardContent className="py-12 text-center text-foreground/50 dark:text-white/40">
             No data found for the selected month/class.
           </CardContent>
         </ThemedCard>
@@ -4111,7 +4452,7 @@ function SettingsTab() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
+        <Loader2 className="h-8 w-8 animate-spin text-foreground/50 dark:text-white/40" />
       </div>
     );
   }
@@ -4130,7 +4471,7 @@ function SettingsTab() {
         <CardContent className="space-y-6">
           {/* Timezone */}
           <div className="space-y-2">
-            <Label className="text-muted-foreground dark:text-white/70">Timezone</Label>
+            <Label className="text-foreground/70 dark:text-white/70">Timezone</Label>
             <Select value={timezone} onValueChange={setTimezone}>
               <SelectTrigger className="w-full dark:bg-white/5 dark:border-white/10 dark:text-white">
                 <SelectValue />
@@ -4147,7 +4488,7 @@ function SettingsTab() {
 
           {/* Time Format */}
           <div className="space-y-2">
-            <Label className="text-muted-foreground dark:text-white/70">Time Format</Label>
+            <Label className="text-foreground/70 dark:text-white/70">Time Format</Label>
             <Select value={timeFormat} onValueChange={setTimeFormat}>
               <SelectTrigger className="w-full dark:bg-white/5 dark:border-white/10 dark:text-white">
                 <SelectValue />
@@ -4163,7 +4504,7 @@ function SettingsTab() {
 
           {/* Telegram Bot Token */}
           <div className="space-y-2">
-            <Label className="text-muted-foreground dark:text-white/70" htmlFor="telegram-token">Telegram Bot Token</Label>
+            <Label className="text-foreground/70 dark:text-white/70" htmlFor="telegram-token">Telegram Bot Token</Label>
             <Input
               id="telegram-token"
               value={telegramBotToken}
@@ -4171,7 +4512,7 @@ function SettingsTab() {
               placeholder="Enter Telegram bot token"
               className="dark:bg-white/5 dark:border-white/10 dark:text-white placeholder:text-muted-foreground dark:text-white/30 focus:border-[#2F2FE4]"
             />
-            <p className="text-xs text-muted-foreground dark:text-white/40">
+            <p className="text-xs text-foreground/50 dark:text-white/40">
               Used for sending attendance notifications.
             </p>
           </div>
@@ -4181,8 +4522,8 @@ function SettingsTab() {
           {/* Daily Report Toggle */}
           <div className="flex items-center justify-between">
             <div>
-              <Label className="text-muted-foreground dark:text-white/70">Daily Report</Label>
-              <p className="text-xs text-muted-foreground dark:text-white/40">
+              <Label className="text-foreground/70 dark:text-white/70">Daily Report</Label>
+              <p className="text-xs text-foreground/50 dark:text-white/40">
                 Send daily attendance report via Telegram
               </p>
             </div>
@@ -4195,7 +4536,7 @@ function SettingsTab() {
           {/* Daily Report Time */}
           {dailyReportEnabled && (
             <div className="space-y-2">
-              <Label className="text-muted-foreground dark:text-white/70" htmlFor="report-time">Daily Report Time</Label>
+              <Label className="text-foreground/70 dark:text-white/70" htmlFor="report-time">Daily Report Time</Label>
               <Input
                 id="report-time"
                 type="time"

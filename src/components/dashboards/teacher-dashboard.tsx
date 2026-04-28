@@ -895,7 +895,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                       </DialogHeader>
                       <div className="space-y-4 py-2">
                         <div className="space-y-2">
-                          <Label className="font-medium text-gray-900">From Date</Label>
+                          <Label className="font-medium text-foreground">From Date</Label>
                           <Popover open={leaveFromPickerOpen} onOpenChange={setLeaveFromPickerOpen}>
                             <PopoverTrigger asChild>
                               <Button
@@ -919,7 +919,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                           </Popover>
                         </div>
                         <div className="space-y-2">
-                          <Label className="font-medium text-gray-900">To Date</Label>
+                          <Label className="font-medium text-foreground">To Date</Label>
                           <Popover open={leaveToPickerOpen} onOpenChange={setLeaveToPickerOpen}>
                             <PopoverTrigger asChild>
                               <Button
@@ -943,7 +943,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                           </Popover>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="leave-remark" className="font-medium text-gray-900">Remark</Label>
+                          <Label htmlFor="leave-remark" className="font-medium text-foreground">Remark</Label>
                           <Input
                             id="leave-remark"
                             placeholder="Reason for leave (optional)"
