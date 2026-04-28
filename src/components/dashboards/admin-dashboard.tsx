@@ -73,6 +73,8 @@ import {
   Coffee,
   Sparkles,
   BookOpen,
+  LayoutDashboard,
+  Menu,
 } from "lucide-react";
 
 import jsPDF from "jspdf";
@@ -256,20 +258,118 @@ interface IDCardData {
 
 // ─── Admin Dashboard ─────────────────────────────────────────────────────────
 
+const NAV_ITEMS = [
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, tab: "students" },
+  { key: "attendance", label: "Attendance", icon: ScanLine, tab: "scanner" },
+  { key: "reports", label: "Reports", icon: FileBarChart, tab: "reports" },
+  { key: "students", label: "Students", icon: Users, tab: "students" },
+  { key: "teachers", label: "Teachers", icon: GraduationCap, tab: "teachers" },
+  { key: "leave", label: "Leave", icon: Clock, tab: "leave" },
+  { key: "holidays", label: "Holidays", icon: CalendarDays, tab: "holidays" },
+  { key: "idcards", label: "ID Cards", icon: IdCard, tab: "idcards" },
+  { key: "settings", label: "Settings", icon: Settings, tab: "settings" },
+] as const;
+
+type NavKey = (typeof NAV_ITEMS)[number]["key"];
+
+function getActiveLabel(navKey: NavKey): string {
+  const item = NAV_ITEMS.find((n) => n.key === navKey);
+  return item ? item.label : "Dashboard";
+}
+
 export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
   const { logout } = useAuthStore();
-  const [activeTab, setActiveTab] = useState("students");
+  const [activeNav, setActiveNav] = useState<NavKey>("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const activeTab = NAV_ITEMS.find((n) => n.key === activeNav)?.tab ?? "students";
+
+  const handleNavClick = (key: NavKey) => {
+    setActiveNav(key);
+    setSidebarOpen(false);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: THEME.dark }}>
-      {/* Header */}
-      <header
-        className="sticky top-0 z-40 border-b border-white/10"
-        style={{
-          background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
-        }}
+    <div className="min-h-screen flex" style={{ background: THEME.dark }}>
+      {/* ── Desktop Sidebar (lg+) ── */}
+      <aside
+        className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-60 z-30 border-r border-white/10"
+        style={{ background: THEME.accent }}
       >
-        <div className="flex items-center justify-between px-4 py-3">
+        {/* Logo area */}
+        <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
+          <div
+            className="flex items-center justify-center rounded-xl p-1.5"
+            style={{ background: THEME.primary }}
+          >
+            <ShieldCheck className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-base font-bold text-white tracking-tight">
+              Sankalp Attendance
+            </h1>
+            <p className="text-[10px] text-white/40">Admin Panel</p>
+          </div>
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 py-3 px-2 overflow-y-auto">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeNav === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => handleNavClick(item.key)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
+                  isActive
+                    ? "text-white"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+                style={isActive ? { background: THEME.primary } : undefined}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* User info + Logout */}
+        <div className="border-t border-white/10 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-2 w-2 rounded-full bg-green-400" />
+            <span className="text-sm text-white/80 truncate">{userProp.name}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="w-full justify-start text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
+      </aside>
+
+      {/* ── Mobile Sidebar Overlay ── */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* ── Mobile Sidebar Drawer ── */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-60 flex flex-col border-r border-white/10 transition-transform duration-200 lg:hidden ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+        style={{ background: THEME.accent }}
+      >
+        {/* Logo area */}
+        <div className="flex items-center justify-between px-4 py-5 border-b border-white/10">
           <div className="flex items-center gap-3">
             <div
               className="flex items-center justify-center rounded-xl p-1.5"
@@ -278,136 +378,116 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
               <ShieldCheck className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white tracking-tight">
+              <h1 className="text-base font-bold text-white tracking-tight">
                 Sankalp Attendance
               </h1>
-              <p className="text-[10px] text-white/50 hidden sm:block">
-                Management Dashboard
-              </p>
+              <p className="text-[10px] text-white/40">Admin Panel</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10">
-              <div className="h-2 w-2 rounded-full bg-green-400" />
-              <span className="text-sm text-white/80">{userProp.name}</span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={logout}
-              className="border-white/20 text-white hover:bg-white/10 hover:text-white"
-            >
-              <LogOut className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Logout</span>
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white/60 hover:text-white hover:bg-white/10"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-      </header>
 
-      {/* Navigation Tabs */}
-      <div className="border-b border-white/10" style={{ background: THEME.accent }}>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="px-2">
-            <TabsList className="h-auto flex w-full overflow-x-auto gap-1 p-1.5 bg-transparent justify-start">
-              <TabsTrigger
-                value="students"
-                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
+        {/* Nav items */}
+        <nav className="flex-1 py-3 px-2 overflow-y-auto">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeNav === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => handleNavClick(item.key)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors mb-0.5 ${
+                  isActive
+                    ? "text-white"
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
+                }`}
+                style={isActive ? { background: THEME.primary } : undefined}
               >
-                <Users className="h-3.5 w-3.5" />
-                Students
-              </TabsTrigger>
-              <TabsTrigger
-                value="teachers"
-                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
-              >
-                <GraduationCap className="h-3.5 w-3.5" />
-                Teachers
-              </TabsTrigger>
-              <TabsTrigger
-                value="scanner"
-                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
-              >
-                <ScanLine className="h-3.5 w-3.5" />
-                Scanner
-              </TabsTrigger>
-              <TabsTrigger
-                value="idcards"
-                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
-              >
-                <IdCard className="h-3.5 w-3.5" />
-                ID Cards
-              </TabsTrigger>
-              <TabsTrigger
-                value="leave"
-                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
-              >
-                <Clock className="h-3.5 w-3.5" />
-                Leave
-              </TabsTrigger>
-              <TabsTrigger
-                value="holidays"
-                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
-              >
-                <CalendarDays className="h-3.5 w-3.5" />
-                Holidays
-              </TabsTrigger>
-              <TabsTrigger
-                value="reports"
-                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
-              >
-                <FileBarChart className="h-3.5 w-3.5" />
-                Reports
-              </TabsTrigger>
-              <TabsTrigger
-                value="settings"
-                className="gap-1.5 text-xs sm:text-sm data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-white/60 data-[state=active]:shadow-lg rounded-lg px-3 py-2"
-              >
-                <Settings className="h-3.5 w-3.5" />
-                Settings
-              </TabsTrigger>
-            </TabsList>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* User info + Logout */}
+        <div className="border-t border-white/10 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-2 w-2 rounded-full bg-green-400" />
+            <span className="text-sm text-white/80 truncate">{userProp.name}</span>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="w-full justify-start text-white/60 hover:text-white hover:bg-white/10"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Logout
+          </Button>
+        </div>
+      </aside>
 
-          {/* ── Students Tab ──────────────────────────────────────── */}
-          <TabsContent value="students" className="flex-1 p-4">
-            <StudentsTab />
-          </TabsContent>
+      {/* ── Main Area ── */}
+      <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
+        {/* Header */}
+        <header
+          className="sticky top-0 z-30 border-b border-white/10"
+          style={{
+            background: `linear-gradient(135deg, ${THEME.accent}, ${THEME.secondary})`,
+          }}
+        >
+          <div className="flex items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              {/* Hamburger - mobile only */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden text-white/70 hover:text-white hover:bg-white/10"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                {getActiveLabel(activeNav)}
+              </h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10">
+                <div className="h-2 w-2 rounded-full bg-green-400" />
+                <span className="text-sm text-white/80">{userProp.name}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={logout}
+                className="border-white/20 text-white hover:bg-white/10 hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
+          </div>
+        </header>
 
-          {/* ── Teachers Tab ──────────────────────────────────────── */}
-          <TabsContent value="teachers" className="flex-1 p-4">
-            <TeachersTab />
-          </TabsContent>
-
-          {/* ── QR Scanner Tab ────────────────────────────────────── */}
-          <TabsContent value="scanner" className="flex-1 p-4">
-            <QRScannerTab />
-          </TabsContent>
-
-          {/* ── ID Cards Tab ──────────────────────────────────────── */}
-          <TabsContent value="idcards" className="flex-1 p-4">
-            <IDCardsTab />
-          </TabsContent>
-
-          {/* ── Leave Tab ─────────────────────────────────────────── */}
-          <TabsContent value="leave" className="flex-1 p-4">
-            <LeaveTab adminUserId={userProp.userId} />
-          </TabsContent>
-
-          {/* ── Holidays Tab ──────────────────────────────────────── */}
-          <TabsContent value="holidays" className="flex-1 p-4">
-            <HolidaysTab />
-          </TabsContent>
-
-          {/* ── Reports Tab ───────────────────────────────────────── */}
-          <TabsContent value="reports" className="flex-1 p-4">
-            <ReportsTab />
-          </TabsContent>
-
-          {/* ── Settings Tab ──────────────────────────────────────── */}
-          <TabsContent value="settings" className="flex-1 p-4">
-            <SettingsTab />
-          </TabsContent>
-        </Tabs>
+        {/* Content */}
+        <main className="flex-1 p-4">
+          {activeTab === "students" && <StudentsTab />}
+          {activeTab === "teachers" && <TeachersTab />}
+          {activeTab === "scanner" && <QRScannerTab />}
+          {activeTab === "idcards" && <IDCardsTab />}
+          {activeTab === "leave" && <LeaveTab adminUserId={userProp.userId} />}
+          {activeTab === "holidays" && <HolidaysTab />}
+          {activeTab === "reports" && <ReportsTab />}
+          {activeTab === "settings" && <SettingsTab />}
+        </main>
       </div>
     </div>
   );
@@ -1166,7 +1246,7 @@ function StudentsTab() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteStudent} onOpenChange={() => setDeleteStudent(null)}>
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>Delete Student</DialogTitle>
             <DialogDescription>
@@ -1190,7 +1270,7 @@ function StudentsTab() {
         open={!!createdCredentials}
         onOpenChange={() => setCreatedCredentials(null)}
       >
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>Student Created Successfully</DialogTitle>
             <DialogDescription>
@@ -1242,7 +1322,7 @@ function StudentFormDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-white max-h-[90vh] overflow-y-auto">
         <StudentFormContent student={student} onSubmit={onSubmit} onCancel={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
@@ -1675,7 +1755,7 @@ function TeachersTab() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteTeacher} onOpenChange={() => setDeleteTeacher(null)}>
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>Delete Teacher</DialogTitle>
             <DialogDescription>
@@ -1699,7 +1779,7 @@ function TeachersTab() {
         open={!!createdCredentials}
         onOpenChange={() => setCreatedCredentials(null)}
       >
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>Teacher Created Successfully</DialogTitle>
             <DialogDescription>
@@ -1768,7 +1848,7 @@ function TeacherFormDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-white max-h-[90vh] overflow-y-auto">
         <TeacherFormContent teacher={teacher} onSubmit={onSubmit} onCancel={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
@@ -2553,7 +2633,7 @@ function IDCardsTab() {
 
       {/* ID Card Preview Dialog */}
       <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="bg-white max-w-md">
           <DialogHeader>
             <DialogTitle>ID Card Preview</DialogTitle>
           </DialogHeader>
@@ -2955,7 +3035,7 @@ function HolidaysTab() {
 
       {/* Delete Confirmation */}
       <Dialog open={!!deleteHoliday} onOpenChange={() => setDeleteHoliday(null)}>
-        <DialogContent>
+        <DialogContent className="bg-white">
           <DialogHeader>
             <DialogTitle>Delete Holiday</DialogTitle>
             <DialogDescription>
@@ -3049,7 +3129,7 @@ function AddHolidayDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add Holiday</DialogTitle>
           <DialogDescription>Add a holiday for selected classes.</DialogDescription>

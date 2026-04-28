@@ -354,3 +354,109 @@ Stage Summary:
 - Soft delete "Remove Card" button added with tooltip
 - Canvas download fully updated to match new preview design
 - All existing functionality preserved
+
+---
+Task ID: 6-a
+Agent: Sidebar Navigation Agent
+Task: Add Sidebar Navigation to AdminDashboard + Fix Contrast Issues
+
+Work Log:
+- Added LayoutDashboard and Menu icons to lucide-react imports
+- Replaced horizontal tab navigation with fixed left sidebar navigation:
+  - Desktop (lg+): Fixed left sidebar, 240px wide (w-60), full height, THEME.accent background (#1A1953)
+  - Mobile/Tablet: Hamburger menu icon in header, slide-out drawer sidebar with bg-black/50 overlay
+  - Sidebar logo area with ShieldCheck icon, "Sankalp Attendance" title, "Admin Panel" subtitle
+  - Active item highlighted with THEME.primary background (#2F2FE4), white text
+  - Inactive items: text-white/70, hover:bg-white/10
+  - Bottom of sidebar: User info (green dot + name) + Logout button
+  - Close button (X) on mobile sidebar drawer
+- Navigation items (matching requirement exactly):
+  - Dashboard → LayoutDashboard icon → students tab (default)
+  - Attendance → ScanLine icon → scanner tab
+  - Reports → FileBarChart icon → reports tab
+  - Students → Users icon → students tab
+  - Teachers → GraduationCap icon → teachers tab
+  - Leave → Clock icon → leave tab
+  - Holidays → CalendarDays icon → holidays tab
+  - ID Cards → IdCard icon → idcards tab
+  - Settings → Settings icon → settings tab
+- Updated header: simplified to hamburger menu (mobile only), page title (dynamic), user info, logout
+- Replaced Tabs/TabsContent with conditional rendering using activeTab state
+- Added NavKey type for type-safe navigation
+- Main content area uses ml-0 lg:ml-60 for sidebar offset
+- Fixed contrast issues in all DialogContent components:
+  - StudentFormDialog: Added bg-white to DialogContent
+  - TeacherFormDialog: Added bg-white to DialogContent
+  - AddHolidayDialog: Added bg-white to DialogContent
+  - Delete Student dialog: Added bg-white to DialogContent
+  - Delete Teacher dialog: Added bg-white to DialogContent
+  - Delete Holiday dialog: Added bg-white to DialogContent
+  - Student Created Credentials dialog: Added bg-white to DialogContent
+  - Teacher Created Credentials dialog: Added bg-white to DialogContent
+  - ID Card Preview dialog: Added bg-white to DialogContent
+- Verified Select/Calendar/Popover portal components render correctly:
+  - SelectContent uses bg-popover (white in light mode) with dark text
+  - Calendar uses bg-background (light) with proper text colors
+  - PopoverContent uses bg-popover with proper contrast
+- All lint checks pass (0 errors)
+- Dev server compiling successfully
+
+Stage Summary:
+- Sidebar navigation replaces horizontal tabs for better mobile UX
+- Desktop: fixed 240px sidebar with THEME.accent background
+- Mobile: hamburger menu + slide-out drawer with overlay
+- 9 navigation items with proper icons matching specification
+- All dialogs now have explicit bg-white for guaranteed light background contrast
+- Portal components (Select, Calendar, Popover) confirmed working with proper contrast
+- No changes to backend logic, API routes, or data flow
+- All existing tab content components preserved
+
+---
+Task ID: 6-b
+Agent: Sidebar Navigation + Contrast Fix Agent
+Task: Add Sidebar Navigation to Teacher & Student Dashboards + Fix Contrast Issues
+
+Work Log:
+- Rewrote /src/components/dashboards/teacher-dashboard.tsx with sidebar navigation:
+  - Added LayoutDashboard, Menu, X icons from lucide-react
+  - Added activeTab state (TeacherTab type: "attendance" | "mark" | "leave" | "holidays")
+  - Added sidebarOpen state (boolean) for mobile drawer
+  - Removed Tabs/TabsContent/TabsList/TabsTrigger imports (no longer needed)
+  - Removed Badge import (unused)
+  - Removed activeTabClass constant (no longer needed)
+  - Created SIDEBAR_ITEMS array with icons: Attendance→ClipboardCheck, Mark→CalendarDays, Leave→Plane, Holidays→PartyPopper
+  - Created TAB_TITLES record mapping tabs to display names
+  - Desktop sidebar: Fixed left, w-60 (240px), full height, THEME.accent background
+  - Mobile sidebar: Hamburger menu in header, slide-out drawer with bg-black/50 overlay
+  - Sidebar logo area: Sparkles icon, "Sankalp Attendance" title, "Teacher Panel" subtitle
+  - Active nav item: THEME.primary background (#2F2FE4), white text, rounded-lg
+  - Inactive nav items: text-white/70, hover:bg-white/10, rounded-lg
+  - Bottom of sidebar: User info (UserCircle icon + name + userId) + Logout button
+  - Close button (X) on mobile sidebar drawer
+  - Header simplified: hamburger menu (mobile only), dynamic page title, user welcome, logout
+  - Main content offset: lg:ml-60 for sidebar, conditional rendering with activeTab
+  - Fixed contrast in Leave dialog: Labels now use text-gray-900 for dark text on white background
+- Rewrote /src/components/dashboards/student-dashboard.tsx with sidebar navigation:
+  - Same sidebar pattern as teacher dashboard
+  - Student sidebar items: Attendance→ClipboardCheck, Leave→Plane, Holidays→PartyPopper
+  - Sidebar subtitle: "Student Panel"
+  - User info section includes class badge (bg-white/15)
+  - Header shows user class as pill badge
+  - Fixed contrast in Leave dialog: Labels now use text-gray-900
+  - Subject-wise attendance date picker button: white/ghost styled (bg-white/10 border-white/20)
+  - Monthly summary month input: dark-themed (bg-white/10 border-white/20 text-white)
+- Both dashboards: All tab content preserved exactly as before (same cards, tables, forms, data flow)
+- All lint checks pass (0 errors)
+- Dev server compiling successfully
+
+Stage Summary:
+- Sidebar navigation replaces horizontal tabs in both Teacher and Student dashboards
+- Desktop: fixed 240px sidebar with THEME.accent (#1A1953) background
+- Mobile: hamburger menu + slide-out drawer with bg-black/50 overlay
+- Active nav item: THEME.primary (#2F2FE4) background, white text
+- Sidebar bottom: user info + logout button
+- Header simplified: hamburger (mobile) + dynamic page title + user + logout
+- Dialog contrast fix: Labels inside dialogs use text-gray-900 (dark text on white background)
+- Portal components (Select, Calendar, Popover) confirmed working with proper contrast
+- No changes to backend logic, API routes, or data flow
+- All existing tab content and functionality preserved

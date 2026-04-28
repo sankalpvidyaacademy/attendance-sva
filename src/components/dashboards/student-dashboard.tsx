@@ -15,6 +15,9 @@ import {
   UserCircle,
   Sparkles,
   BookOpen,
+  LayoutDashboard,
+  Menu,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -26,7 +29,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -35,9 +37,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -74,6 +82,21 @@ const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-amber-500 text-white",
   APPROVED: "bg-emerald-500 text-white",
   REJECTED: "bg-red-500 text-white",
+};
+
+// ─── Sidebar Nav Items ─────────────────────────────────
+type StudentTab = "attendance" | "leave" | "holidays";
+
+const SIDEBAR_ITEMS: { key: StudentTab; label: string; icon: React.ElementType }[] = [
+  { key: "attendance", label: "Attendance", icon: ClipboardCheck },
+  { key: "leave", label: "Leave", icon: Plane },
+  { key: "holidays", label: "Holidays", icon: PartyPopper },
+];
+
+const TAB_TITLES: Record<StudentTab, string> = {
+  attendance: "Attendance",
+  leave: "Leave",
+  holidays: "Holidays",
 };
 
 // ─── Types ─────────────────────────────────────────────
@@ -131,6 +154,10 @@ interface Holiday {
 // ─── Component ─────────────────────────────────────────
 export function StudentDashboard({ user }: StudentDashboardProps) {
   const logout = useAuthStore((s) => s.logout);
+
+  // ── Navigation state ──
+  const [activeTab, setActiveTab] = useState<StudentTab>("attendance");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // ── Attendance tab state ──
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
@@ -380,81 +407,161 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
   const total = summaryData.present + summaryData.absent + summaryData.leave + summaryData.holiday;
   const presentPercent = total > 0 ? Math.round((summaryData.present / total) * 100) : 0;
 
-  return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: THEME.dark }}>
-      {/* ════════════ HEADER ════════════ */}
-      <header
-        className="sticky top-0 z-40 shadow-xl"
-        style={{
-          background: `linear-gradient(135deg, ${THEME.accent} 0%, ${THEME.secondary} 50%, ${THEME.primary} 100%)`,
-        }}
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center size-11 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20">
-              <Sparkles className="size-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
-                Sankalp Attendance
-              </h1>
-              <p className="text-xs text-blue-200 flex items-center gap-1">
-                <UserCircle className="size-3" />
-                Welcome, {user.name}
-                {user.class && (
-                  <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/15 text-[10px] font-medium">
-                    {user.class}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className="gap-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
-          >
-            <LogOut className="size-4" />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
-        </div>
-      </header>
+  // ── Sidebar nav click handler ──
+  const handleNavClick = (tab: StudentTab) => {
+    setActiveTab(tab);
+    setSidebarOpen(false);
+  };
 
-      {/* ════════════ MAIN CONTENT ════════════ */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-5 sm:px-6 sm:py-6">
-        <Tabs defaultValue="attendance" className="w-full">
-          {/* ── Tab Navigation ── */}
-          <TabsList
-            className="w-full flex flex-wrap mb-5 h-auto p-1 rounded-xl"
-            style={{ backgroundColor: THEME.accent }}
+  // ────────────────────────────────────────────────────────
+  // SIDEBAR COMPONENT
+  // ────────────────────────────────────────────────────────
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full" style={{ backgroundColor: THEME.accent }}>
+      {/* Logo area */}
+      <div className="px-5 py-6 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center size-10 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20">
+            <Sparkles className="size-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-white leading-tight">Sankalp Attendance</h2>
+            <p className="text-xs text-white/60">Student Panel</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav items */}
+      <nav className="flex-1 px-3 py-4 space-y-1">
+        {SIDEBAR_ITEMS.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => handleNavClick(key)}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+              activeTab === key
+                ? "text-white shadow-md"
+                : "text-white/70 hover:bg-white/10 hover:text-white"
+            )}
+            style={activeTab === key ? { backgroundColor: THEME.primary } : undefined}
           >
-            <TabsTrigger
-              value="attendance"
-              className="flex-1 min-w-0 gap-1.5 py-2.5 rounded-lg text-sm font-medium text-blue-200 transition-all data-[state=active]:text-white data-[state=active]:shadow-lg"
+            <Icon className="size-5 shrink-0" />
+            <span>{label}</span>
+          </button>
+        ))}
+      </nav>
+
+      {/* User info + Logout */}
+      <div className="px-3 py-4 border-t border-white/10">
+        <div className="flex items-center gap-3 px-3 py-2 mb-2">
+          <div className="flex items-center justify-center size-9 rounded-full bg-white/15">
+            <UserCircle className="size-5 text-white" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-white truncate">{user.name}</p>
+            <p className="text-xs text-white/50 truncate">
+              {user.userId}
+              {user.class && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/15 text-[10px] font-medium text-white">
+                  {user.class}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-all"
+        >
+          <LogOut className="size-5 shrink-0" />
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  // ────────────────────────────────────────────────────────
+  // RENDER
+  // ────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen flex" style={{ backgroundColor: THEME.dark }}>
+      {/* ════════════ DESKTOP SIDEBAR ════════════ */}
+      <aside className="hidden lg:flex lg:flex-col lg:w-60 lg:fixed lg:inset-y-0 lg:z-50">
+        <SidebarContent />
+      </aside>
+
+      {/* ════════════ MOBILE SIDEBAR OVERLAY ════════════ */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setSidebarOpen(false)}
+          />
+          {/* Sidebar drawer */}
+          <div className="fixed inset-y-0 left-0 w-60 z-50 animate-in slide-in-from-left duration-200">
+            <SidebarContent />
+          </div>
+          {/* Close button */}
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="fixed top-4 left-64 z-50 size-8 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ════════════ MAIN AREA ════════════ */}
+      <div className="flex-1 lg:ml-60 flex flex-col min-h-screen">
+        {/* ── Header ── */}
+        <header
+          className="sticky top-0 z-40 shadow-xl"
+          style={{
+            background: `linear-gradient(135deg, ${THEME.accent} 0%, ${THEME.secondary} 50%, ${THEME.primary} 100%)`,
+          }}
+        >
+          <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+            <div className="flex items-center gap-3">
+              {/* Hamburger - mobile only */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden size-10 flex items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors"
+              >
+                <Menu className="size-5" />
+              </button>
+              <div>
+                <h1 className="text-lg font-bold text-white leading-tight tracking-tight">
+                  {TAB_TITLES[activeTab]}
+                </h1>
+                <p className="text-xs text-blue-200 flex items-center gap-1">
+                  <UserCircle className="size-3" />
+                  Welcome, {user.name}
+                  {user.class && (
+                    <span className="ml-1 px-1.5 py-0.5 rounded-md bg-white/15 text-[10px] font-medium">
+                      {user.class}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={logout}
+              className="gap-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
             >
-              <ClipboardCheck className="size-4" />
-              <span>Attendance</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="leave"
-              className="flex-1 min-w-0 gap-1.5 py-2.5 rounded-lg text-sm font-medium text-blue-200 transition-all data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              <Plane className="size-4" />
-              <span>Leave</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="holidays"
-              className="flex-1 min-w-0 gap-1.5 py-2.5 rounded-lg text-sm font-medium text-blue-200 transition-all data-[state=active]:text-white data-[state=active]:shadow-lg"
-            >
-              <PartyPopper className="size-4" />
-              <span className="hidden sm:inline">Holidays</span>
-              <span className="sm:hidden text-xs">Hol.</span>
-            </TabsTrigger>
-          </TabsList>
+              <LogOut className="size-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
+        </header>
+
+        {/* ── Main Content ── */}
+        <main className="flex-1 w-full px-4 py-5 sm:px-6 sm:py-6">
 
           {/* ════════════ ATTENDANCE TAB ════════════ */}
-          <TabsContent value="attendance">
+          {activeTab === "attendance" && (
             <div className="space-y-6">
               {/* ── Attendance History Card ── */}
               <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
@@ -737,10 +844,10 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+          )}
 
           {/* ════════════ LEAVE TAB ════════════ */}
-          <TabsContent value="leave">
+          {activeTab === "leave" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
                 className="pb-4"
@@ -780,7 +887,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                       </DialogHeader>
                       <div className="space-y-4 py-2">
                         <div className="space-y-2">
-                          <Label className="font-medium">From Date</Label>
+                          <Label className="font-medium text-gray-900">From Date</Label>
                           <Popover open={leaveFromPickerOpen} onOpenChange={setLeaveFromPickerOpen}>
                             <PopoverTrigger asChild>
                               <Button
@@ -804,7 +911,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                           </Popover>
                         </div>
                         <div className="space-y-2">
-                          <Label className="font-medium">To Date</Label>
+                          <Label className="font-medium text-gray-900">To Date</Label>
                           <Popover open={leaveToPickerOpen} onOpenChange={setLeaveToPickerOpen}>
                             <PopoverTrigger asChild>
                               <Button
@@ -828,7 +935,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                           </Popover>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="leave-remark" className="font-medium">Remark</Label>
+                          <Label htmlFor="leave-remark" className="font-medium text-gray-900">Remark</Label>
                           <Input
                             id="leave-remark"
                             placeholder="Reason for leave (optional)"
@@ -903,10 +1010,10 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          )}
 
           {/* ════════════ HOLIDAYS TAB ════════════ */}
-          <TabsContent value="holidays">
+          {activeTab === "holidays" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
                 className="pb-4"
@@ -983,9 +1090,10 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
+          )}
+
+        </main>
+      </div>
     </div>
   );
 }
