@@ -87,3 +87,27 @@ Stage Summary:
 - Regenerate option available for deleted cards
 - No database changes - "delete" only clears the preview state
 - User data remains intact
+
+---
+Task ID: 1
+Agent: Main Agent
+Task: Fix Dashboard Student Tab + Logout Button Light Mode
+
+Work Log:
+- Found bug: admin "Dashboard" nav item mapped to tab "students" — clicking Dashboard showed StudentsTab
+- Created DashboardTab component with stats overview (students count, teachers count, present today, pending leaves, today's summary)
+- Changed Dashboard nav item from tab "students" to tab "dashboard"
+- Changed fallback tab from "students" to "dashboard"
+- Added DashboardTab rendering in content area
+- Fixed logout button visibility in light mode: outline variant had white bg + text-primary-foreground (white) = invisible
+  - Admin header logout: changed to explicit white text with semi-transparent white bg on dark blue header
+  - Teacher header logout/theme toggle: changed from text-primary-foreground to text-white/80
+  - Student header logout/theme toggle: same fix
+- Fixed admin header user name display: changed from text-primary-foreground/80 to text-white/80
+- Fixed admin header theme toggle: changed from text-primary-foreground to text-white/70
+
+Stage Summary:
+- Dashboard now shows overview stats instead of Students tab
+- Students tab is a separate nav item (only visible to admin)
+- Logout buttons now visible in both light and dark modes
+- Lint passes, dev server compiles successfully
