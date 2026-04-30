@@ -2925,19 +2925,19 @@ function IDCardsTab() {
       ctx.stroke();
 
       ctx.textAlign = "left";
-      ctx.fillStyle = "#ffffff80";
+      ctx.fillStyle = "#ffffffcc";
       ctx.font = "10px sans-serif";
       ctx.fillText("User ID", 32, infoY + 16);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 12px monospace";
+      ctx.font = "bold 13px monospace";
       ctx.fillText(selectedCard.user.userId, 32, infoY + 34);
 
       ctx.textAlign = "right";
-      ctx.fillStyle = "#ffffff80";
+      ctx.fillStyle = "#ffffffcc";
       ctx.font = "10px sans-serif";
       ctx.fillText("Password", W - 32, infoY + 16);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 12px monospace";
+      ctx.font = "bold 13px monospace";
       ctx.fillText(selectedCard.user.password, W - 32, infoY + 34);
 
       ctx.textAlign = "center";
@@ -2984,8 +2984,8 @@ function IDCardsTab() {
       ctx.fillText("Sankalp Vidya Academy", W / 2, H - 18);
 
       const link = document.createElement("a");
-      link.download = `${selectedCard.user.name}_${selectedCard.user.userId}.jpg`;
-      link.href = canvas.toDataURL("image/jpeg", 0.95);
+      link.download = `${selectedCard.user.name}_${selectedCard.user.userId}.png`;
+      link.href = canvas.toDataURL("image/png");
       link.click();
 
       toast.success("ID Card downloaded successfully");
@@ -3233,18 +3233,10 @@ function IDCardsTab() {
               Close
             </Button>
             <Button
-              variant="outline"
-              onClick={handleRegenerateCard}
-              disabled={regenerating}
-              className="w-full sm:w-auto"
-            >
-              {regenerating ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-1" />} Regenerate
-            </Button>
-            <Button
               onClick={handleDownload}
               className="bg-[#2F2FE4] hover:bg-[#2424b8] text-white w-full sm:w-auto"
             >
-              <Download className="h-4 w-4 mr-1" /> Download JPG
+              <Download className="h-4 w-4 mr-1" /> Download PNG
             </Button>
           </DialogFooter>
         </DialogContent>
