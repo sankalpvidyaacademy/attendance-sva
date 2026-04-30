@@ -3174,10 +3174,9 @@ function IDCardsTab() {
                     {selectedCard.user.class && isStudent && (
                       <div className="mt-2">
                         <span
-                          className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold"
+                          className="inline-block px-3 py-0.5 rounded-full text-xs font-semibold text-white"
                           style={{
                             background: colors.primary + "33",
-                            color: colors.primary,
                             border: `1px solid ${colors.primary}55`,
                           }}
                         >
@@ -3192,10 +3191,9 @@ function IDCardsTab() {
                         {selectedCard.user.subjects.map((sub) => (
                           <span
                             key={sub}
-                            className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium"
+                            className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
                             style={{
                               background: colors.primary + "22",
-                              color: colors.primary,
                               border: `1px solid ${colors.primary}44`,
                             }}
                           >
@@ -3214,14 +3212,14 @@ function IDCardsTab() {
                       }}
                     >
                       <div>
-                        <div className="text-[10px] text-foreground/60 dark:text-white/50 mb-0.5">User ID</div>
-                        <div className="text-sm font-mono font-semibold text-card-foreground dark:text-white">
+                        <div className="text-[10px] text-white/70 mb-0.5">User ID</div>
+                        <div className="text-sm font-mono font-semibold text-white">
                           {selectedCard.user.userId}
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[10px] text-foreground/60 dark:text-white/50 mb-0.5">Password</div>
-                        <div className="text-sm font-mono font-semibold text-card-foreground dark:text-white">
+                        <div className="text-[10px] text-white/70 mb-0.5">Password</div>
+                        <div className="text-sm font-mono font-semibold text-white">
                           {selectedCard.user.password}
                         </div>
                       </div>
