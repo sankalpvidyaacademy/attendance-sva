@@ -2905,7 +2905,7 @@ function IDCardsTab() {
         ctx.beginPath();
         ctx.roundRect(clsX, 133, classW, 22, 11);
         ctx.fill();
-        ctx.fillStyle = colors.primary;
+        ctx.fillStyle = "#ffffff";
         ctx.font = "bold 11px sans-serif";
         ctx.fillText(classText, W / 2, 149);
       }
@@ -2947,7 +2947,7 @@ function IDCardsTab() {
             ctx.beginPath();
             ctx.roundRect(startX, subjectsY, item.width, pillH, 10);
             ctx.stroke();
-            ctx.fillStyle = colors.primary;
+            ctx.fillStyle = "#ffffff";
             ctx.font = "10px sans-serif";
             ctx.fillText(item.text, startX + item.width / 2, subjectsY + 14);
             startX += item.width + pillGap;
@@ -2969,7 +2969,7 @@ function IDCardsTab() {
       ctx.stroke();
 
       ctx.textAlign = "left";
-      ctx.fillStyle = "#ffffffcc";
+      ctx.fillStyle = "#ffffff";
       ctx.font = "10px sans-serif";
       ctx.fillText("User ID", 32, infoY + 16);
       ctx.fillStyle = "#ffffff";
@@ -2977,7 +2977,7 @@ function IDCardsTab() {
       ctx.fillText(selectedCard.user.userId, 32, infoY + 34);
 
       ctx.textAlign = "right";
-      ctx.fillStyle = "#ffffffcc";
+      ctx.fillStyle = "#ffffff";
       ctx.font = "10px sans-serif";
       ctx.fillText("Password", W - 32, infoY + 16);
       ctx.fillStyle = "#ffffff";
