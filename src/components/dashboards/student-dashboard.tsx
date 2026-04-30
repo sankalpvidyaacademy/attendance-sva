@@ -550,7 +550,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-muted dark:hover:bg-white/10"
+                className="text-white/70 hover:text-white hover:bg-white/10"
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-5 w-5" />}
               </Button>
@@ -558,7 +558,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 variant="ghost"
                 size="sm"
                 onClick={logout}
-                className="gap-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-muted dark:hover:bg-white/10 rounded-xl"
+                className="gap-2 text-white/80 hover:text-white hover:bg-white/10 rounded-xl"
               >
                 <LogOut className="size-4" />
                 <span className="hidden sm:inline">Logout</span>

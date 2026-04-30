@@ -264,7 +264,7 @@ interface IDCardData {
 // ─── Admin Dashboard ─────────────────────────────────────────────────────────
 
 const NAV_ITEMS = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, tab: "students" },
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, tab: "dashboard" },
   { key: "attendance", label: "Attendance", icon: ScanLine, tab: "scanner" },
   { key: "reports", label: "Reports", icon: FileBarChart, tab: "reports" },
   { key: "students", label: "Students", icon: Users, tab: "students" },
@@ -288,7 +288,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
   const [activeNav, setActiveNav] = useState<NavKey>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const activeTab = NAV_ITEMS.find((n) => n.key === activeNav)?.tab ?? "students";
+  const activeTab = NAV_ITEMS.find((n) => n.key === activeNav)?.tab ?? "dashboard";
 
   const handleNavClick = (key: NavKey) => {
     setActiveNav(key);
@@ -461,13 +461,13 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
             <div className="flex items-center gap-3">
               <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 dark:bg-white/10">
                 <div className="h-2 w-2 rounded-full bg-green-400" />
-                <span className="text-sm text-primary-foreground/80 dark:text-white/80">{userProp.name}</span>
+                <span className="text-sm text-white/80">{userProp.name}</span>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="text-primary-foreground/70 dark:text-white/70 hover:text-primary-foreground dark:hover:text-white hover:bg-white/10"
+                className="text-white/70 hover:text-white hover:bg-white/10"
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-5 w-5" />}
               </Button>
@@ -475,7 +475,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
                 variant="outline"
                 size="sm"
                 onClick={logout}
-                className="dark:border-white/20 border-border text-primary-foreground hover:bg-muted dark:hover:bg-white/10 dark:hover:text-white"
+                className="border-white/30 bg-white/10 text-white hover:bg-white/20 dark:border-white/20 dark:hover:bg-white/10"
               >
                 <LogOut className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Logout</span>
@@ -486,6 +486,7 @@ export default function AdminDashboard({ user: userProp }: { user: AuthUser }) {
 
         {/* Content */}
         <main className="flex-1 p-4">
+          {activeTab === "dashboard" && <DashboardTab />}
           {activeTab === "students" && <StudentsTab />}
           {activeTab === "teachers" && <TeachersTab />}
           {activeTab === "scanner" && <QRScannerTab />}
@@ -1103,6 +1104,119 @@ function ThemedCard({ children, className = "" }: { children: React.ReactNode; c
     <Card className={`bg-card border-border text-card-foreground ${className}`}>
       {children}
     </Card>
+  );
+}
+
+// ─── Dashboard Tab ─────────────────────────────────────────────────────────
+
+function DashboardTab() {
+  const [stats, setStats] = useState({ students: 0, teachers: 0, presentToday: 0, totalToday: 0, pendingLeaves: 0, holidaysThisMonth: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const [usersRes, attendanceRes, leaveRes, holidaysRes] = await Promise.all([
+          fetch("/api/users"),
+          fetch(`/api/attendance?date=${today}`),
+          fetch("/api/leave?status=PENDING"),
+          fetch(`/api/holidays?month=${today.slice(0, 7)}`),
+        ]);
+        const usersData = await usersRes.json();
+        const attendanceData = await attendanceRes.json();
+        const leaveData = await leaveRes.json();
+        const holidaysData = await holidaysRes.json();
+
+        const users = Array.isArray(usersData) ? usersData : [];
+        const students = users.filter((u: StudentOrTeacher) => u.role === "STUDENT");
+        const teachers = users.filter((u: StudentOrTeacher) => u.role === "TEACHER");
+        const records = Array.isArray(attendanceData.records) ? attendanceData.records : [];
+        const presentToday = records.filter((r: { status: string }) => r.status === "PRESENT").length;
+        const pendingLeaves = Array.isArray(leaveData.leaveRequests) ? leaveData.leaveRequests.length : 0;
+        const holidays = Array.isArray(holidaysData.holidays) ? holidaysData.holidays.length : 0;
+
+        setStats({ students: students.length, teachers: teachers.length, presentToday, totalToday: records.length, pendingLeaves, holidaysThisMonth: holidays });
+      } catch {
+        // silently fail
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const statCards = [
+    { label: "Students", value: stats.students, icon: Users, color: "text-blue-600 dark:text-blue-400" },
+    { label: "Teachers", value: stats.teachers, icon: GraduationCap, color: "text-purple-600 dark:text-purple-400" },
+    { label: "Present Today", value: stats.presentToday, icon: CheckCircle, color: "text-green-600 dark:text-green-400" },
+    { label: "Pending Leaves", value: stats.pendingLeaves, icon: Clock, color: "text-amber-600 dark:text-amber-400" },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-16">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground dark:text-white/40" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground dark:text-white">Dashboard</h2>
+        <p className="text-sm text-muted-foreground dark:text-white/50">Overview of your attendance system</p>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <ThemedCard key={card.label}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <Icon className={`h-5 w-5 ${card.color}`} />
+                </div>
+                <p className="text-2xl font-bold text-foreground dark:text-white">{card.value}</p>
+                <p className="text-xs text-muted-foreground dark:text-white/50">{card.label}</p>
+              </CardContent>
+            </ThemedCard>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ThemedCard>
+          <CardHeader>
+            <CardTitle className="text-sm text-foreground dark:text-white">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p className="text-xs text-muted-foreground dark:text-white/50">Use the sidebar to navigate to different modules.</p>
+          </CardContent>
+        </ThemedCard>
+        <ThemedCard>
+          <CardHeader>
+            <CardTitle className="text-sm text-foreground dark:text-white">Today&apos;s Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground dark:text-white/50">Total Records</span>
+                <span className="font-medium text-foreground dark:text-white">{stats.totalToday}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground dark:text-white/50">Present</span>
+                <span className="font-medium text-green-600 dark:text-green-400">{stats.presentToday}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground dark:text-white/50">Holidays This Month</span>
+                <span className="font-medium text-purple-600 dark:text-purple-400">{stats.holidaysThisMonth}</span>
+              </div>
+            </div>
+          </CardContent>
+        </ThemedCard>
+      </div>
+    </div>
   );
 }
 
