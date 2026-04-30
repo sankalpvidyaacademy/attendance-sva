@@ -2307,8 +2307,8 @@ function QRScannerTab() {
     setCooldownRemaining(seconds);
   };
 
-  const handleScan = async () => {
-    if (!scanInput.trim()) {
+  const processAttendance = async (userId: string) => {
+    if (!userId.trim()) {
       toast.error("Please enter a User ID");
       return;
     }
@@ -2323,7 +2323,7 @@ function QRScannerTab() {
       const res = await fetch("/api/attendance/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: scanInput.trim() }),
+        body: JSON.stringify({ userId: userId.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -2369,6 +2369,8 @@ function QRScannerTab() {
       setScanning(false);
     }
   };
+
+  const handleScan = () => processAttendance(scanInput);
 
   // Determine the icon and color based on scan result
   const getScanResultDisplay = () => {
@@ -2490,11 +2492,16 @@ function QRScannerTab() {
             disabled={cooldownRemaining > 0}
           >
             <Camera className="h-4 w-4 mr-2" />
-            {cameraOpen ? "Close Camera" : "Open Camera (Scan QR)"}
+            {cameraOpen ? "Close Scanner" : "Scan QR Code"}
           </Button>
           {cameraOpen && (
             <div className="rounded-xl border dark:border-white/10 border-border overflow-hidden">
-              <CameraView onScan={(code) => { setScanInput(code); setCameraOpen(false); }} />
+              <CameraView onScan={(code) => {
+                setScanInput(code);
+                setCameraOpen(false);
+                // Directly process the scanned code since state update is async
+                processAttendance(code);
+              }} />
             </div>
           )}
 
@@ -2634,37 +2641,78 @@ function QRScannerTab() {
 }
 
 
-// ─── Camera View (simplified) ────────────────────────────────────────────────
+// ─── Camera View with html5-qrcode ────────────────────────────────────────────
 
 function CameraView({ onScan }: { onScan: (code: string) => void }) {
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const scannerRef = React.useRef<import("html5-qrcode").Html5Qrcode | null>(null);
+  const scanLockRef = React.useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [scannerReady, setScannerReady] = useState(false);
 
   useEffect(() => {
-    let stream: MediaStream | null = null;
-    async function startCamera() {
+    let cancelled = false;
+
+    async function startScanner() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" },
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
+        const { Html5Qrcode } = await import("html5-qrcode");
+        if (cancelled) return;
+
+        const scanner = new Html5Qrcode("qr-reader");
+        scannerRef.current = scanner;
+
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0,
+          },
+          (decodedText) => {
+            // Prevent double scan
+            if (scanLockRef.current) return;
+            const data = decodedText?.trim();
+            if (!data) return;
+
+            scanLockRef.current = true;
+            onScan(data);
+
+            // Unlock after 5 seconds
+            setTimeout(() => {
+              scanLockRef.current = false;
+            }, 5000);
+          },
+          () => {
+            // QR code not found in frame — silently ignore
+          }
+        );
+
+        if (!cancelled) setScannerReady(true);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Scanner start error:", err);
+          setError("Camera access denied or not available. Please type the User ID manually.");
         }
-      } catch {
-        setError("Camera access denied or not available. Please type the User ID manually.");
       }
     }
-    startCamera();
+
+    startScanner();
+
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
+      cancelled = true;
+      const scanner = scannerRef.current;
+      if (scanner) {
+        scanner
+          .stop()
+          .then(() => scanner.clear())
+          .catch(() => {});
+        scannerRef.current = null;
       }
     };
-  }, []);
+  }, [onScan]);
 
   if (error) {
     return (
-      <div className="p-4 text-center text-sm text-foreground/50 dark:text-white/40 bg-muted dark:bg-white/5">
+      <div className="p-4 text-center text-sm text-foreground/50 dark:text-white/40 bg-muted dark:bg-white/5 rounded-xl">
         {error}
       </div>
     );
@@ -2672,26 +2720,22 @@ function CameraView({ onScan }: { onScan: (code: string) => void }) {
 
   return (
     <div className="relative">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className="w-full max-h-64 object-cover"
+      <div
+        id="qr-reader"
+        className="w-full overflow-hidden rounded-lg"
+        style={{ minHeight: 280 }}
       />
-      <div className="absolute bottom-2 left-0 right-0 flex justify-center">
-        <Button
-          size="sm"
-          variant="secondary"
-          className="min-h-[44px] rounded-xl"
-          onClick={() => {
-            const code = window.prompt("Enter the scanned User ID:");
-            if (code) onScan(code);
-          }}
-        >
-          <QrCode className="h-4 w-4 mr-1" /> Manual Input from QR
-        </Button>
-      </div>
+      {/* Scan box overlay indicator */}
+      {scannerReady && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+          <div className="w-[250px] h-[250px] border-2 border-[#2F2FE4]/50 rounded-xl" />
+        </div>
+      )}
+      {!scannerReady && !error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/80 dark:bg-black/60 rounded-lg">
+          <Loader2 className="h-8 w-8 animate-spin text-[#2F2FE4]" />
+        </div>
+      )}
     </div>
   );
 }

@@ -27,8 +27,9 @@ export async function GET(
 
     // Generate QR code data URL from userId (for scanning)
     const qrCodeDataUrl = await QRCode.toDataURL(user.userId, {
-      width: 256,
+      width: 300,
       margin: 2,
+      errorCorrectionLevel: "H",
       color: {
         dark: "#000000",
         light: "#ffffff",

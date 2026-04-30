@@ -136,3 +136,21 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--foreground);
 }
+
+/* html5-qrcode scanner overrides - hide default UI, keep video */
+#qr-reader {
+  border: none !important;
+}
+#qr-reader__scan_region {
+  min-height: 280px;
+}
+#qr-reader__dashboard {
+  display: none !important;
+}
+#qr-reader video {
+  border-radius: 0.5rem;
+  object-fit: cover;
+}
+#qr-reader__scan_region > img {
+  display: none !important;
+}
