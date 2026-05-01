@@ -1640,7 +1640,6 @@ function StudentFormContent({
                 >
                   <Checkbox
                     checked={subjects.includes(sub)}
-                    onCheckedChange={() => toggleSubject(sub)}
                   />
                   <span className="text-sm font-normal">
                     {sub}
@@ -2240,7 +2239,6 @@ function TeacherFormContent({
               >
                 <Checkbox
                   checked={assignedClasses.includes(cls)}
-                  onCheckedChange={() => toggleClass(cls)}
                 />
                 <span className="text-sm font-normal">
                   {cls}
@@ -2287,7 +2285,6 @@ function TeacherFormContent({
                   >
                     <Checkbox
                       checked={(classSubjects[activeClassTab] || []).includes(sub)}
-                      onCheckedChange={() => toggleSubject(activeClassTab, sub)}
                     />
                     <span className="text-sm font-normal">
                       {sub}
