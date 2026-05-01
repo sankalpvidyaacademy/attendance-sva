@@ -4,6 +4,7 @@ import {
   SUBJECT_ATTENDANCE_STATUS,
   getCurrentDateString,
   CLASS_SUBJECTS,
+  resolveClassName,
 } from "@/lib/constants";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -196,7 +197,7 @@ export async function GET(request: NextRequest) {
             const dayAttendance = userAttendance.find(
               (a) => a.date === dateStr
             );
-            const isHoliday = isHolidayForClass(dateStr, student.class);
+            const isHoliday = isHolidayForClass(dateStr, resolveClassName(student.class));
             const onLeave = userLeaves.some(
               (l) => l.fromDate <= dateStr && l.toDate >= dateStr
             );
@@ -226,7 +227,7 @@ export async function GET(request: NextRequest) {
 
           // Subject-wise summary — include noClass count
           const classSubjects =
-            (student.class ? CLASS_SUBJECTS[student.class] : null) || [];
+            (student.class ? CLASS_SUBJECTS[resolveClassName(student.class)] : null) || [];
           const subjectSummary: Record<
             string,
             { present: number; absent: number; leave: number; holiday: number; noClass: number }
@@ -240,7 +241,7 @@ export async function GET(request: NextRequest) {
               const dateStr = `${month}-${d.toString().padStart(2, "0")}`;
               if (dateStr > todayStr) continue;
 
-              const isHoliday = isHolidayForClass(dateStr, student.class);
+              const isHoliday = isHolidayForClass(dateStr, resolveClassName(student.class));
               const onLeave = userLeaves.some(
                 (l) => l.fromDate <= dateStr && l.toDate >= dateStr
               );

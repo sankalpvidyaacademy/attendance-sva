@@ -4,6 +4,7 @@ import {
   SUBJECT_ATTENDANCE_STATUS,
   getCurrentDateString,
   CLASS_SUBJECTS,
+  resolveClassName,
 } from "@/lib/constants";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -176,7 +177,7 @@ export async function GET(request: NextRequest) {
           );
           const onLeave = leaveUserIds.has(student.userId);
           const { isHoliday: isStudentHoliday } = isHolidayForClass(
-            student.class
+            resolveClassName(student.class)
           );
 
           const status = determineStatus(
@@ -187,7 +188,7 @@ export async function GET(request: NextRequest) {
 
           // Get subjects for this student's class
           const classSubjects =
-            (student.class ? CLASS_SUBJECTS[student.class] : null) || [];
+            (student.class ? CLASS_SUBJECTS[resolveClassName(student.class)] : null) || [];
 
           // Build subject-wise attendance
           const subjects = classSubjects.map((subj) => {

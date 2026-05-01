@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/stores/auth-store";
-import { CLASSES, CLASS_SUBJECTS } from "@/lib/constants";
+import { CLASSES, CLASS_SUBJECTS, parseTeacherSubjects, getAllSubjectsFromClassMap, getTeacherClasses } from "@/lib/constants";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -199,8 +199,8 @@ interface DailyReportData {
     holiday: number;
   };
   qrLogs: QRLogItem[];
-  studentReport: DailyReportRecord[];
-  teacherReport: DailyReportRecord[];
+  studentReport?: DailyReportRecord[];
+  teacherReport?: DailyReportRecord[];
 }
 
 interface MonthlyReportRecord {
@@ -229,8 +229,8 @@ interface MonthlyReportRecord {
 interface MonthlyReportData {
   month: string;
   timezone?: string;
-  studentReport: MonthlyReportRecord[];
-  teacherReport: MonthlyReportRecord[];
+  studentReport?: MonthlyReportRecord[];
+  teacherReport?: MonthlyReportRecord[];
 }
 
 interface AttendanceRecord {
@@ -895,9 +895,9 @@ function generateDailyReportPDF(
   }
 
   // ── Student Report ──
-  if (report.studentReport.length > 0) {
+  if ((report.studentReport ?? []).length > 0) {
     y = checkPageSpace(doc, y, 35);
-    y = drawSectionDivider(doc, y, `Student Report (${report.studentReport.length})`, margin, pageW);
+    y = drawSectionDivider(doc, y, `Student Report (${(report.studentReport ?? []).length})`, margin, pageW);
 
     const sHeaders = ["Name", "ID", "Class", "Check-In", "Check-Out", "Status", "Subjects"];
     const sWidths = [
@@ -910,7 +910,7 @@ function generateDailyReportPDF(
       contentW * 0.24,
     ];
     y = drawTableHeader(doc, y, sHeaders, sWidths, margin);
-    report.studentReport.forEach((rec, i) => {
+    (report.studentReport ?? []).forEach((rec, i) => {
       const subjectsStr = rec.subjects
         ? rec.subjects.map((s) => `${s.subject.charAt(0)}:${s.status.charAt(0)}`).join(" ")
         : "-";
@@ -936,14 +936,14 @@ function generateDailyReportPDF(
   }
 
   // ── Teacher Report ──
-  if (report.teacherReport.length > 0) {
+  if ((report.teacherReport ?? []).length > 0) {
     y = checkPageSpace(doc, y, 35);
-    y = drawSectionDivider(doc, y, `Teacher Report (${report.teacherReport.length})`, margin, pageW);
+    y = drawSectionDivider(doc, y, `Teacher Report (${(report.teacherReport ?? []).length})`, margin, pageW);
 
     const tHeaders = ["Name", "ID", "Check-In", "Check-Out", "Status", "Subjects"];
     const tWidths = [contentW * 0.26, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.14, contentW * 0.18];
     y = drawTableHeader(doc, y, tHeaders, tWidths, margin);
-    report.teacherReport.forEach((rec, i) => {
+    (report.teacherReport ?? []).forEach((rec, i) => {
       const subjectsStr = rec.subjects
         ? rec.subjects.map((s) => `${s.subject.charAt(0)}:${s.status.charAt(0)}`).join(" ")
         : "-";
@@ -1003,7 +1003,7 @@ function generateMonthlyReportPDF(
   doc.text(`Class: ${classLabel}  |  Role: ${roleLabel}`, margin, y);
   y += 10;
 
-  const allRecords = [...report.studentReport, ...report.teacherReport];
+  const allRecords = [...(report.studentReport ?? []), ...(report.teacherReport ?? [])];
 
   allRecords.forEach((rec) => {
     y = checkPageSpace(doc, y, 55);
@@ -1740,25 +1740,21 @@ function TeachersTab() {
   const handleMarkClassOff = async (teacher: StudentOrTeacher) => {
     setMarkingOff(teacher.id);
     try {
-      const teacherSubjects = Array.isArray(teacher.subjects)
-        ? teacher.subjects
-        : [];
-      const teacherClasses: string[] = [];
+      // Parse teacher subjects using the new helper
+      const classSubjectMap = parseTeacherSubjects(
+        typeof teacher.subjects === "string" ? teacher.subjects : JSON.stringify(teacher.subjects ?? null)
+      );
+      const teacherClasses = getTeacherClasses(classSubjectMap);
 
-      for (const cls of CLASSES) {
-        const classSubjects = CLASS_SUBJECTS[cls] || [];
-        if (teacherSubjects.some((s) => classSubjects.includes(s))) {
-          teacherClasses.push(cls);
-        }
+      if (teacherClasses.length === 0) {
+        toast.error("No classes assigned to this teacher");
+        return;
       }
 
       const today = new Date().toISOString().split("T")[0];
 
       for (const cls of teacherClasses) {
-        const classSubjects = CLASS_SUBJECTS[cls] || [];
-        const relevantSubjects = teacherSubjects.filter((s) =>
-          classSubjects.includes(s)
-        );
+        const relevantSubjects = classSubjectMap[cls] || [];
 
         await fetch("/api/subject-attendance", {
           method: "PUT",
@@ -1784,7 +1780,7 @@ function TeachersTab() {
   const handleFormSubmit = async (data: {
     name: string;
     classes: string[];
-    subjects: string[];
+    subjects: string[] | Record<string, string[]>;
     phone: string;
   }) => {
     try {
@@ -1794,7 +1790,7 @@ function TeachersTab() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: data.name,
-            subjects: data.subjects,
+            subjects: data.subjects, // Will be JSON stringified by API
             phone: data.phone || null,
           }),
         });
@@ -1884,17 +1880,47 @@ function TeachersTab() {
                     <div className="text-sm text-foreground/60 dark:text-white/50 mt-0.5">
                       ID: <span className="font-mono text-foreground/70 dark:text-white/70">{t.userId}</span>
                     </div>
-                    {t.subjects && Array.isArray(t.subjects) && t.subjects.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {t.subjects.map((sub) => (
-                          <Badge
-                            key={sub}
-                            variant="outline"
-                            className="text-[10px] bg-[#2F2FE4]/10 text-[#2F2FE4] border-[#2F2FE4]/20 dark:bg-[#2F2FE4]/20 dark:border-[#2F2FE4]/30 rounded-full px-2"
-                          >
-                            {sub}
-                          </Badge>
-                        ))}
+                    {t.subjects && (
+                      <div className="mt-2 space-y-1.5">
+                        {(() => {
+                          // Parse teacher subjects - support both old flat array and new class-subjects map
+                          const parsed = parseTeacherSubjects(
+                            typeof t.subjects === "string" ? t.subjects : JSON.stringify(t.subjects)
+                          );
+                          const classes = getTeacherClasses(parsed);
+                          if (classes.length === 0) {
+                            // Old format: flat array
+                            const flatSubjects = Array.isArray(t.subjects) ? t.subjects : [];
+                            return flatSubjects.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {flatSubjects.map((sub: string) => (
+                                  <Badge
+                                    key={sub}
+                                    variant="outline"
+                                    className="text-[10px] bg-[#2F2FE4]/10 text-[#2F2FE4] border-[#2F2FE4]/20 dark:bg-[#2F2FE4]/20 dark:border-[#2F2FE4]/30 rounded-full px-2"
+                                  >
+                                    {sub}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : null;
+                          }
+                          // New format: class-subjects mapping
+                          return classes.map((cls) => (
+                            <div key={cls} className="flex flex-wrap items-center gap-1">
+                              <span className="text-[10px] font-semibold text-foreground/60 dark:text-white/50 mr-1">{cls}:</span>
+                              {(parsed[cls] || []).map((sub) => (
+                                <Badge
+                                  key={`${cls}-${sub}`}
+                                  variant="outline"
+                                  className="text-[10px] bg-[#2F2FE4]/10 text-[#2F2FE4] border-[#2F2FE4]/20 dark:bg-[#2F2FE4]/20 dark:border-[#2F2FE4]/30 rounded-full px-2"
+                                >
+                                  {sub}
+                                </Badge>
+                              ))}
+                            </div>
+                          ));
+                        })()}
                       </div>
                     )}
                     {t.phone && (
@@ -2036,6 +2062,14 @@ function TeachersTab() {
 // ─── Teacher Form Dialog ─────────────────────────────────────────────────────
 
 function deriveClassesFromSubjects(subjects: string[] | null): string[] {
+  // Handle NEW format: class-subjects mapping (Record<string, string[]>)
+  if (subjects && !Array.isArray(subjects) && typeof subjects === "object") {
+    return Object.keys(subjects).filter((cls) => {
+      const subs = (subjects as Record<string, string[]>)[cls];
+      return Array.isArray(subs) && subs.length > 0;
+    });
+  }
+  // Handle OLD format: flat array of subjects
   const subs = Array.isArray(subjects) ? subjects : [];
   const result: string[] = [];
   for (const cls of CLASSES) {
@@ -2059,7 +2093,7 @@ function TeacherFormDialog({
   onSubmit: (data: {
     name: string;
     classes: string[];
-    subjects: string[];
+    subjects: string[] | Record<string, string[]>;
     phone: string;
   }) => void;
 }) {
@@ -2081,37 +2115,64 @@ function TeacherFormContent({
   onSubmit: (data: {
     name: string;
     classes: string[];
-    subjects: string[];
+    subjects: string[] | Record<string, string[]>;
     phone: string;
   }) => void;
   onCancel: () => void;
 }) {
-  const initialClasses = deriveClassesFromSubjects(teacher?.subjects ?? null);
+  // Parse existing teacher subjects into class-subjects map
+  const teacherSubjects = teacher?.subjects;
+  const initialClassSubjects = React.useMemo(() => {
+    if (!teacherSubjects) return {};
+    // Use the new parseTeacherSubjects helper
+    const parsed = parseTeacherSubjects(
+      typeof teacherSubjects === "string" ? teacherSubjects : JSON.stringify(teacherSubjects)
+    );
+    return parsed;
+  }, [teacherSubjects]);
+
   const [name, setName] = useState(teacher?.name || "");
-  const [selectedClasses, setSelectedClasses] = useState<string[]>(initialClasses);
-  const [subjects, setSubjects] = useState<string[]>(
-    Array.isArray(teacher?.subjects) ? teacher.subjects : []
-  );
+  const [classSubjects, setClassSubjects] = useState<Record<string, string[]>>(initialClassSubjects);
   const [phone, setPhone] = useState(teacher?.phone || "");
   const [saving, setSaving] = useState(false);
+  const [activeClassTab, setActiveClassTab] = useState<string>("");
 
-  const availableSubjects = getAllSubjectsForClasses(selectedClasses);
+  // All classes the teacher is assigned to
+  const assignedClasses = getTeacherClasses(classSubjects);
+
+  // Set initial active tab
+  React.useEffect(() => {
+    if (assignedClasses.length > 0 && !activeClassTab) {
+      setActiveClassTab(assignedClasses[0]);
+    }
+  }, [assignedClasses.length, activeClassTab]);
 
   const toggleClass = (cls: string) => {
-    setSelectedClasses((prev) => {
-      const next = prev.includes(cls) ? prev.filter((c) => c !== cls) : [...prev, cls];
-      const validSubjects = getAllSubjectsForClasses(next);
-      setSubjects((currentSubs) =>
-        currentSubs.filter((s) => validSubjects.includes(s))
-      );
+    setClassSubjects((prev) => {
+      const next = { ...prev };
+      if (next[cls]) {
+        // Remove class and its subjects
+        delete next[cls];
+        if (activeClassTab === cls) {
+          setActiveClassTab(Object.keys(next)[0] || "");
+        }
+      } else {
+        // Add class with empty subjects
+        next[cls] = [];
+        setActiveClassTab(cls);
+      }
       return next;
     });
   };
 
-  const toggleSubject = (sub: string) => {
-    setSubjects((prev) =>
-      prev.includes(sub) ? prev.filter((s) => s !== sub) : [...prev, sub]
-    );
+  const toggleSubject = (cls: string, subject: string) => {
+    setClassSubjects((prev) => {
+      const currentSubjects = prev[cls] || [];
+      const newSubjects = currentSubjects.includes(subject)
+        ? currentSubjects.filter((s) => s !== subject)
+        : [...currentSubjects, subject];
+      return { ...prev, [cls]: newSubjects };
+    });
   };
 
   const handleSubmit = async () => {
@@ -2119,15 +2180,30 @@ function TeacherFormContent({
       toast.error("Name is required");
       return;
     }
+    if (assignedClasses.length === 0) {
+      toast.error("Please select at least one class");
+      return;
+    }
+    // Validate each class has at least one subject
+    for (const cls of assignedClasses) {
+      if (!classSubjects[cls] || classSubjects[cls].length === 0) {
+        toast.error(`Please select at least one subject for ${cls}`);
+        return;
+      }
+    }
+
     setSaving(true);
     await onSubmit({
       name: name.trim(),
-      classes: selectedClasses,
-      subjects,
+      classes: assignedClasses,
+      subjects: classSubjects, // Pass the full class-subjects map
       phone: phone.trim(),
     });
     setSaving(false);
   };
+
+  // Get subjects available for the active class tab
+  const activeClassSubjects = activeClassTab ? (CLASS_SUBJECTS[activeClassTab] || []) : [];
 
   return (
     <>
@@ -2151,14 +2227,16 @@ function TeacherFormContent({
             placeholder="Teacher name"
           />
         </div>
+
+        {/* Class Selection */}
         <div className="space-y-2">
-          <Label>Classes</Label>
-          <div className="grid grid-cols-1 gap-2 border rounded-md p-3 max-h-48 overflow-y-auto">
+          <Label>Classes *</Label>
+          <div className="grid grid-cols-1 gap-1.5 border rounded-md p-3 max-h-48 overflow-y-auto">
             {CLASSES.map((cls) => (
               <div key={cls} className="flex items-center gap-2">
                 <Checkbox
                   id={`tcls-${cls}`}
-                  checked={selectedClasses.includes(cls)}
+                  checked={assignedClasses.includes(cls)}
                   onCheckedChange={() => toggleClass(cls)}
                 />
                 <Label
@@ -2167,32 +2245,60 @@ function TeacherFormContent({
                 >
                   {cls}
                 </Label>
+                {assignedClasses.includes(cls) && classSubjects[cls] && classSubjects[cls].length > 0 && (
+                  <span className="text-[10px] text-muted-foreground ml-auto">
+                    ({classSubjects[cls].length} subjects)
+                  </span>
+                )}
               </div>
             ))}
           </div>
         </div>
-        {availableSubjects.length > 0 && (
+
+        {/* Subject Selection per Class */}
+        {assignedClasses.length > 0 && (
           <div className="space-y-2">
-            <Label>Subjects</Label>
-            <div className="grid grid-cols-2 gap-2 border rounded-md p-3 max-h-48 overflow-y-auto">
-              {availableSubjects.map((sub) => (
-                <div key={sub} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`tsub-${sub}`}
-                    checked={subjects.includes(sub)}
-                    onCheckedChange={() => toggleSubject(sub)}
-                  />
-                  <Label
-                    htmlFor={`tsub-${sub}`}
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    {sub}
-                  </Label>
-                </div>
+            <Label>Subjects per Class</Label>
+            {/* Class tabs */}
+            <div className="flex flex-wrap gap-1.5 border rounded-md p-2">
+              {assignedClasses.map((cls) => (
+                <button
+                  key={cls}
+                  type="button"
+                  onClick={() => setActiveClassTab(cls)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    activeClassTab === cls
+                      ? "bg-[#2F2FE4] text-white"
+                      : "bg-muted dark:bg-white/10 text-foreground/70 dark:text-white/70 hover:bg-muted/80 dark:hover:bg-white/15"
+                  }`}
+                >
+                  {cls}
+                </button>
               ))}
             </div>
+            {/* Subject checkboxes for active class */}
+            {activeClassTab && activeClassSubjects.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 border rounded-md p-3">
+                {activeClassSubjects.map((sub) => (
+                  <div key={sub} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`tsub-${activeClassTab}-${sub}`}
+                      checked={(classSubjects[activeClassTab] || []).includes(sub)}
+                      onCheckedChange={() => toggleSubject(activeClassTab, sub)}
+                    />
+                    <Label
+                      htmlFor={`tsub-${activeClassTab}-${sub}`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      {sub}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
+
         <div className="space-y-2">
           <Label htmlFor="teacher-phone">Phone (optional)</Label>
           <Input
@@ -3782,6 +3888,8 @@ function DailyReport() {
   const [loading, setLoading] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [reportSection, setReportSection] = useState<string>("students");
+  const studentReportList = report?.studentReport ?? [];
+  const teacherReportList = report?.teacherReport ?? [];
 
   const generate = async () => {
     if (!date) {
@@ -4023,28 +4131,28 @@ function DailyReport() {
           )}
 
           {/* Report Sections Tabs */}
-          {(report.studentReport.length > 0 || report.teacherReport.length > 0) && (
+          {(studentReportList.length > 0 || teacherReportList.length > 0) && (
             <Tabs value={reportSection} onValueChange={setReportSection}>
               <TabsList className="dark:bg-white/5 bg-muted border dark:border-white/10 border-border">
-                {report.studentReport.length > 0 && (
+                {studentReportList.length > 0 && (
                   <TabsTrigger
                     value="students"
                     className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-foreground/60 dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
                   >
-                    <GraduationCap className="h-3.5 w-3.5" /> Students ({report.studentReport.length})
+                    <GraduationCap className="h-3.5 w-3.5" /> Students ({studentReportList.length})
                   </TabsTrigger>
                 )}
-                {report.teacherReport.length > 0 && (
+                {teacherReportList.length > 0 && (
                   <TabsTrigger
                     value="teachers"
                     className="data-[state=active]:bg-[#2F2FE4] data-[state=active]:text-white text-foreground/60 dark:text-white/60 dark:data-[state=inactive]:text-white/60 rounded-lg gap-1.5"
                   >
-                    <Users className="h-3.5 w-3.5" /> Teachers ({report.teacherReport.length})
+                    <Users className="h-3.5 w-3.5" /> Teachers ({teacherReportList.length})
                   </TabsTrigger>
                 )}
               </TabsList>
 
-              {report.studentReport.length > 0 && (
+              {studentReportList.length > 0 && (
                 <TabsContent value="students">
                   <ThemedCard>
                     <CardContent className="p-0">
@@ -4062,7 +4170,7 @@ function DailyReport() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {report.studentReport.map((rec) => (
+                            {studentReportList.map((rec) => (
                               <TableRow key={rec.userId} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
                                 <TableCell className="font-medium text-card-foreground dark:text-white">{rec.name}</TableCell>
                                 <TableCell className="font-mono text-xs text-foreground/70 dark:text-white/70">{rec.userId}</TableCell>
@@ -4107,7 +4215,7 @@ function DailyReport() {
                 </TabsContent>
               )}
 
-              {report.teacherReport.length > 0 && (
+              {teacherReportList.length > 0 && (
                 <TabsContent value="teachers">
                   <ThemedCard>
                     <CardContent className="p-0">
@@ -4124,7 +4232,7 @@ function DailyReport() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {report.teacherReport.map((rec) => (
+                            {teacherReportList.map((rec) => (
                               <TableRow key={rec.userId} className="dark:border-white/5 border-border hover:bg-muted/50 dark:hover:bg-white/5">
                                 <TableCell className="font-medium text-card-foreground dark:text-white">{rec.name}</TableCell>
                                 <TableCell className="font-mono text-xs text-foreground/70 dark:text-white/70">{rec.userId}</TableCell>
@@ -4168,7 +4276,7 @@ function DailyReport() {
             </Tabs>
           )}
 
-          {report.studentReport.length === 0 && report.teacherReport.length === 0 && (
+          {studentReportList.length === 0 && teacherReportList.length === 0 && (
             <ThemedCard>
               <CardContent className="py-12 text-center text-foreground/50 dark:text-white/40">
                 No data found for the selected filters.

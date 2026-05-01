@@ -1,113 +1,111 @@
 ---
 Task ID: 1
-Agent: Theme Fix Subagent
-Task: Fix Dark/Light Mode Color Contrast Across All Components
+Agent: Main
+Task: Fix class-subject mapping per detailed spec
 
 Work Log:
-- Admin Dashboard: Removed all `bg-white` from 9 DialogContent components, replaced with `dark:bg-popover`
-- Admin Dashboard: Changed sidebar inactive items from `text-muted-foreground` to `text-foreground/60` for better light mode contrast
-- Admin Dashboard: Changed table headers from `text-muted-foreground` to `text-foreground/60`
-- Admin Dashboard: Changed secondary text from `text-muted-foreground` to `text-foreground/50`
-- Admin Dashboard: Fixed header elements to use `text-primary-foreground` on blue background
-- Teacher Dashboard: Changed hardcoded `text-gray-900` labels to `text-foreground` (3 instances)
-- Student Dashboard: Changed hardcoded `text-gray-900` labels to `text-foreground` (3 instances)
-- Student Dashboard: Added dark mode variants for 4 monthly summary stat cards
-- Student Dashboard: Changed CardDescription colors from `text-muted-foreground` to `text-foreground/60`
-- Login Form: Verified correct (already uses `text-[#080616]` on always-light card)
+- Updated CLASSES to 13 individual classes (Class 4, 5, 6, 7, 8, 9 CBSE, 10 CBSE, 9 ICSE, 10 ICSE, 11 Science, 12 Science, 11 Commerce, 12 Commerce)
+- Updated CLASS_SUBJECTS with proper mapping per class
+- Added LEGACY_CLASS_MAP for backward compatibility with old DB records
+- Added helper functions: resolveClassName, parseTeacherSubjects, getAllSubjectsFromClassMap, getTeacherClasses
 
 Stage Summary:
-- All dialogs now properly theme in both light/dark modes
-- High contrast maintained: light bg → dark text, dark bg → white text
-- No more white-on-white or dark-on-dark text issues
-- CSS variables handle automatic color switching via Tailwind dark mode
-
----
-Task ID: 3
-Agent: QR Scan Fix Subagent
-Task: Fix QR Scan System Stability
-
-Work Log:
-- Backend: Increased scan delay from 5s to 10s (`MIN_SCAN_DELAY_MS = 10_000`)
-- Backend: Added strict state machine: first scan → Check-In only, next → Check-Out only
-- Backend: Wrapped all DB writes in `db.$transaction()` for reliable saves
-- Backend: Uses timezone-aware time from Settings, not device/browser time
-- Backend: Returns comprehensive response with `success`, `message`, `userName`, `time`, `date`, `cooldownSeconds`
-- Backend: Clear messages: "✅ Check-In Successful", "🚪 Check-Out Successful", "⏳ Please wait X seconds"
-- Frontend: Added cooldown timer UI with countdown and circular progress indicator
-- Frontend: Disabled scan button/input/camera during cooldown period
-- Frontend: Color-coded result cards (green=check-in, blue=check-out, amber=info)
-- Frontend: Rich result display with user name, time, date, check-in/out times
-- Frontend: Error card for failed scans
-
-Stage Summary:
-- QR scan system is now robust with 10-second cooldown
-- Strict check-in/check-out state machine prevents simultaneous operations
-- Transaction-based saves ensure no partial/missed updates
-- Timezone-aware time handling uses app settings
-- Clear user feedback at every step
+- constants.ts fully updated with 13 classes and comprehensive helper functions
+- Backward compatibility maintained via LEGACY_CLASS_MAP and parseTeacherSubjects
 
 ---
 Task ID: 2
-Agent: PDF Report Redesign Subagent
-Task: PDF Report Redesign - Complete redesign with proper table layout
+Agent: Main + Subagent
+Task: Fix client-side exception when selecting Teacher/Student in admin report
 
 Work Log:
-- Replaced `truncateText()` with `doc.splitTextToSize()` for auto text wrapping
-- Implemented dynamic row height calculation based on content
-- Added proper page break handling when rows don't fit
-- Added 3mm cell padding with vertical text centering
-- Created `drawSectionDivider()` for visual section separation
-- Created `drawPDFHeader()` for consistent branded headers
-- Added colored status pills in PDF tables (green/red/amber/violet/gray)
-- Improved layout: 38mm header bar, compact filters, consistent fonts
-- All data now fully visible with no overlapping text
+- Made DailyReportData.studentReport and teacherReport optional (type fix)
+- Made MonthlyReportData.studentReport and teacherReport optional
+- Added null safety variables: studentReportList and teacherReportList
+- Replaced all direct .length accesses with safe alternatives
+- Added null safety to PDF generation functions
 
 Stage Summary:
-- PDF reports completely redesigned with professional layout
-- No more text overlapping - auto-wrapping handles long content
-- Dynamic row heights accommodate variable content
-- Page breaks handled gracefully
-- Clean, professional design with Sankalp Vidya Academy branding
+- Report section no longer crashes when selecting Teacher or Student role filter
+- API correctly omits the other report type, frontend handles undefined gracefully
+
+---
+Task ID: 3
+Agent: Subagent
+Task: Update teacher form with class-wise subject mapping
+
+Work Log:
+- Replaced flat subject selection with class-wise tabbed interface
+- Each class has its own independent subject checkboxes
+- Teachers can add/remove classes and select subjects per class
+- Updated deriveClassesFromSubjects to handle both old flat array and new class-subjects map
+- Updated TeacherFormDialog and TeacherFormContent types to support Record<string, string[]>
+
+Stage Summary:
+- Teacher form now stores subjects as class-subjects mapping
+- Each class's subjects are independent and isolated
+- No cross-contamination between classes
 
 ---
 Task ID: 4
-Agent: ID Card Delete Subagent
-Task: Add ID Card Delete Option
+Agent: Subagent
+Task: Update teacher dashboard to filter students by class AND subject
 
 Work Log:
-- Added "Delete Card" button (red, destructive) in ID card preview dialog footer
-- Added "Regenerate" button (outline) to re-fetch ID card data
-- Added delete confirmation dialog with AlertTriangle icon
-- Confirmation dialog clearly explains no user data is affected
-- After delete: dialog closes, toast shows "ID Card removed. You can regenerate it from the user list."
-- After regenerate: preview refreshes with new data
+- Added parseTeacherSubjects, getTeacherClasses, getAllSubjectsFromClassMap to imports
+- Replaced flat teacherSubjects with teacherClassSubjects Record<string, string[]>
+- Updated Class dropdown to show only classes teacher teaches
+- Updated Subject dropdown to show only subjects for selected class
+- Updated fetchStudents to filter by subject match (only students with at least one common subject)
+- Reset markSubject when class changes
 
 Stage Summary:
-- Admin can now delete/remove ID card previews
-- Regenerate option available for deleted cards
-- No database changes - "delete" only clears the preview state
-- User data remains intact
+- Teacher dashboard now correctly filters: same class + same subject
+- Only relevant students are shown for marking attendance
 
 ---
-Task ID: 1
-Agent: Main Agent
-Task: Fix Dashboard Student Tab + Logout Button Light Mode
+Task ID: 5
+Agent: Subagent
+Task: Update admin dashboard teacher card display with class-subjects mapping
 
 Work Log:
-- Found bug: admin "Dashboard" nav item mapped to tab "students" — clicking Dashboard showed StudentsTab
-- Created DashboardTab component with stats overview (students count, teachers count, present today, pending leaves, today's summary)
-- Changed Dashboard nav item from tab "students" to tab "dashboard"
-- Changed fallback tab from "students" to "dashboard"
-- Added DashboardTab rendering in content area
-- Fixed logout button visibility in light mode: outline variant had white bg + text-primary-foreground (white) = invisible
-  - Admin header logout: changed to explicit white text with semi-transparent white bg on dark blue header
-  - Teacher header logout/theme toggle: changed from text-primary-foreground to text-white/80
-  - Student header logout/theme toggle: same fix
-- Fixed admin header user name display: changed from text-primary-foreground/80 to text-white/80
-- Fixed admin header theme toggle: changed from text-primary-foreground to text-white/70
+- Replaced flat subject badges with class-wise subject display
+- Uses parseTeacherSubjects for backward-compatible parsing
+- Shows "ClassName: Subject1, Subject2" format
+- Updated handleMarkClassOff to use parseTeacherSubjects helper
+- Updated handleFormSubmit to support Record<string, string[]> subjects type
 
 Stage Summary:
-- Dashboard now shows overview stats instead of Students tab
-- Students tab is a separate nav item (only visible to admin)
-- Logout buttons now visible in both light and dark modes
-- Lint passes, dev server compiles successfully
+- Teacher cards show subjects organized by class
+- Mark Class Off uses correct class-subjects mapping
+
+---
+Task ID: 6
+Agent: Subagent
+Task: Update API routes for new class structure
+
+Work Log:
+- Added resolveClassName import to daily and monthly report APIs
+- Used resolveClassName when looking up CLASS_SUBJECTS and isHolidayForClass
+- Users API handles both flat array and Record<string, string[]> for subjects via JSON.parse/stringify
+
+Stage Summary:
+- API routes handle both old and new class names via resolveClassName
+- Backward compatible with existing DB records
+
+---
+Task ID: 7
+Agent: Main
+Task: Add localStorage persistence for auth store
+
+Work Log:
+- Added saveToStorage/loadFromStorage helper functions
+- Login and logout now persist/clear from localStorage
+- Added _hasHydrated state and setHasHydrated action
+- Added hydrateAuthStore() function for client-side hydration
+- Added useHasHydrated() hook for avoiding SSR mismatches
+- Updated page.tsx to hydrate on mount and show loading until hydrated
+
+Stage Summary:
+- Auth state persists across page refreshes
+- No hydration mismatch issues

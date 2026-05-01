@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
@@ -64,7 +64,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { SUBJECT_ATTENDANCE_STATUS, CLASSES } from "@/lib/constants";
+import { SUBJECT_ATTENDANCE_STATUS, CLASSES, CLASS_SUBJECTS, parseTeacherSubjects, getTeacherClasses, getAllSubjectsFromClassMap } from "@/lib/constants";
 
 // ─── Color Theme ───────────────────────────────────────
 const THEME = {
@@ -201,12 +201,18 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
   const [leaveFromPickerOpen, setLeaveFromPickerOpen] = useState(false);
   const [leaveToPickerOpen, setLeaveToPickerOpen] = useState(false);
 
-  // ── Derived: teacher's subjects ──
-  const teacherSubjects: string[] = user.subjects
-    ? Array.isArray(user.subjects)
-      ? user.subjects
-      : []
-    : [];
+  // ── Derived: teacher's class-subjects mapping ──
+  const teacherClassSubjects: Record<string, string[]> = useMemo(() => {
+    return parseTeacherSubjects(
+      typeof user.subjects === "string" ? user.subjects : JSON.stringify(user.subjects ?? null)
+    );
+  }, [user.subjects]);
+
+  // Classes the teacher teaches
+  const teacherClasses = useMemo(() => getTeacherClasses(teacherClassSubjects), [teacherClassSubjects]);
+
+  // All unique subjects the teacher teaches (for backward compat)
+  const teacherSubjects: string[] = useMemo(() => getAllSubjectsFromClassMap(teacherClassSubjects), [teacherClassSubjects]);
 
   // ── Fetch attendance records ──
   const fetchAttendance = useCallback(async () => {
@@ -243,7 +249,19 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
       });
       const res = await fetch(`/api/users?${params}`);
       const data = await res.json();
-      const studentList = Array.isArray(data) ? data : [];
+      let studentList = Array.isArray(data) ? data : [];
+
+      // Filter students by subject match: only show students who have at least one
+      // subject in common with the teacher's subjects for this class
+      const teacherSubsForClass = teacherClassSubjects[className] || [];
+      if (teacherSubsForClass.length > 0) {
+        studentList = studentList.filter((s: any) => {
+          const studentSubjects: string[] = Array.isArray(s.subjects) ? s.subjects : [];
+          // Student must have at least one subject that matches teacher's subjects for this class
+          return studentSubjects.some((sub) => teacherSubsForClass.includes(sub));
+        });
+      }
+
       setStudents(studentList);
       const initial: Record<string, string> = {};
       for (const s of studentList) {
@@ -255,7 +273,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
     } finally {
       setStudentsLoading(false);
     }
-  }, []);
+  }, [teacherClassSubjects]);
 
   // ── Fetch leave requests ──
   const fetchLeaves = useCallback(async () => {
@@ -736,18 +754,24 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     <Label className="font-medium">Subject</Label>
                     <Select value={markSubject} onValueChange={setMarkSubject}>
                       <SelectTrigger className="w-full rounded-xl">
-                        <SelectValue placeholder="Select subject" />
+                        <SelectValue placeholder={markClass ? "Select subject" : "Select class first"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {teacherSubjects.length > 0 ? (
-                          teacherSubjects.map((subj) => (
-                            <SelectItem key={subj} value={subj}>
-                              {subj}
+                        {markClass && teacherClassSubjects[markClass] ? (
+                          teacherClassSubjects[markClass].length > 0 ? (
+                            teacherClassSubjects[markClass].map((subj) => (
+                              <SelectItem key={subj} value={subj}>
+                                {subj}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="none" disabled>
+                              No subjects for this class
                             </SelectItem>
-                          ))
+                          )
                         ) : (
                           <SelectItem value="none" disabled>
-                            No subjects assigned
+                            {markClass ? "No subjects assigned for this class" : "Select a class first"}
                           </SelectItem>
                         )}
                       </SelectContent>
@@ -761,6 +785,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                       value={markClass}
                       onValueChange={(val) => {
                         setMarkClass(val);
+                        setMarkSubject(""); // Reset subject when class changes
                         setStudentStatuses({});
                       }}
                     >
@@ -768,11 +793,17 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                         <SelectValue placeholder="Select class" />
                       </SelectTrigger>
                       <SelectContent>
-                        {CLASSES.map((cls) => (
-                          <SelectItem key={cls} value={cls}>
-                            {cls}
+                        {teacherClasses.length > 0 ? (
+                          teacherClasses.map((cls) => (
+                            <SelectItem key={cls} value={cls}>
+                              {cls}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="none" disabled>
+                            No classes assigned
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
