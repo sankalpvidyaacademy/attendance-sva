@@ -1,13 +1,7 @@
-import { PrismaClient } from '@prisma/client'
+// Database adapter - Firebase Firestore
+// This file exports the same `db` interface that API routes use.
+// Swap between Prisma (SQLite) and Firebase by changing this file only.
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+import { db as firebaseDb } from "./firebase-service";
 
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: ['query'],
-  })
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+export const db = firebaseDb;

@@ -151,3 +151,40 @@ Stage Summary:
 - Blue CardHeader sections now have properly centered text (both horizontally and vertically)
 - All 4 fixes from user spec implemented without touching backend, Firebase, QR system, or working layout
 - Lint passes, dev server compiles and runs successfully
+
+---
+Task ID: 10
+Agent: Main
+Task: Firebase Migration - Replace Prisma/SQLite with Firestore
+
+Work Log:
+- Read all 14 API route files and Prisma schema to understand complete data model
+- Installed firebase-admin@13.8.0 package
+- Created /src/lib/firebase-admin.ts - Firebase Admin SDK initialization with env vars
+- Created /src/lib/firebase-service.ts - Full CRUD bridge that mimics Prisma db interface:
+  - db.user (findUnique, findFirst, findMany, create, update, delete)
+  - db.attendance (findUnique, findMany, create, update, upsert)
+  - db.subjectAttendance (findMany, upsert)
+  - db.leaveRequest (findMany, findUnique, create, update)
+  - db.holiday (findMany, findUnique, create, delete)
+  - db.settings (findFirst, create, update)
+  - db.$transaction stub
+- Handles complex queries: OR conditions, contains search, in arrays, range filters (in-memory where Firestore can't)
+- Handles include/user relations by fetching user map and joining
+- Uses composite doc IDs for uniqueness: attendance (userId_date), subjectAttendance (userId_date_subject)
+- Converts Firestore Timestamps to ISO strings for JSON compatibility
+- Converts Date objects to Firestore Timestamps for writes
+- Updated /src/lib/db.ts to re-export from firebase-service instead of Prisma
+- Updated /src/lib/seed.ts (removed unused verifyPassword import)
+- Created .env.local.example with placeholder Firebase config
+- Created .env.local with placeholder values
+- ZERO changes to any API route, any dashboard component, any frontend code
+- All 14 API routes + seed.ts already import db from @/lib/db - automatically uses Firebase
+
+Stage Summary:
+- Firebase migration complete - all backend data operations now go through Firestore
+- Frontend code UNTOUCHED - zero changes to any component, page, or UI file
+- API route files UNTOUCHED - they import db from @/lib/db which now points to Firebase
+- Firestore collections: users, attendance, subjectAttendance, leaveRequests, holidays, settings
+- Need real Firebase config values in .env.local to test
+- For Vercel: add same env vars in Vercel dashboard

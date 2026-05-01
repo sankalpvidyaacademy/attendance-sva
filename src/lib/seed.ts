@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { hashPassword, verifyPassword } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth";
 import { ROLES } from "@/lib/constants";
 
 /**
