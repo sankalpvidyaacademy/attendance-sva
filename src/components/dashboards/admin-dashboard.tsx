@@ -1173,8 +1173,8 @@ function DashboardTab() {
           const Icon = card.icon;
           return (
             <ThemedCard key={card.label}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
+              <CardContent className="p-4 text-center">
+                <div className="flex items-center justify-center mb-2">
                   <Icon className={`h-5 w-5 ${card.color}`} />
                 </div>
                 <p className="text-2xl font-bold text-foreground dark:text-white">{card.value}</p>
@@ -1629,23 +1629,21 @@ function StudentFormContent({
           </Select>
         </div>
         {availableSubjects.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2 relative z-10">
             <Label>Subjects</Label>
-            <div className="grid grid-cols-2 gap-2 border rounded-md p-3 max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-2 border rounded-md p-3 max-h-48 overflow-y-auto relative z-10">
               {availableSubjects.map((sub) => (
-                <div key={sub} className="flex items-center gap-2">
+                <label key={sub} htmlFor={`sub-${sub}`} className="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-muted/50 rounded px-1 relative z-10">
                   <Checkbox
                     id={`sub-${sub}`}
                     checked={subjects.includes(sub)}
                     onCheckedChange={() => toggleSubject(sub)}
+                    className="pointer-events-auto"
                   />
-                  <Label
-                    htmlFor={`sub-${sub}`}
-                    className="text-sm font-normal cursor-pointer"
-                  >
+                  <span className="text-sm font-normal">
                     {sub}
-                  </Label>
-                </div>
+                  </span>
+                </label>
               ))}
             </div>
           </div>
@@ -2229,28 +2227,26 @@ function TeacherFormContent({
         </div>
 
         {/* Class Selection */}
-        <div className="space-y-2">
+        <div className="space-y-2 relative z-10">
           <Label>Classes *</Label>
-          <div className="grid grid-cols-1 gap-1.5 border rounded-md p-3 max-h-48 overflow-y-auto">
+          <div className="grid grid-cols-1 gap-1.5 border rounded-md p-3 max-h-48 overflow-y-auto relative z-10">
             {CLASSES.map((cls) => (
-              <div key={cls} className="flex items-center gap-2">
+              <label key={cls} htmlFor={`tcls-${cls}`} className="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-muted/50 rounded px-1 relative z-10">
                 <Checkbox
                   id={`tcls-${cls}`}
                   checked={assignedClasses.includes(cls)}
                   onCheckedChange={() => toggleClass(cls)}
+                  className="pointer-events-auto"
                 />
-                <Label
-                  htmlFor={`tcls-${cls}`}
-                  className="text-sm font-normal cursor-pointer"
-                >
+                <span className="text-sm font-normal">
                   {cls}
-                </Label>
+                </span>
                 {assignedClasses.includes(cls) && classSubjects[cls] && classSubjects[cls].length > 0 && (
                   <span className="text-[10px] text-muted-foreground ml-auto">
                     ({classSubjects[cls].length} subjects)
                   </span>
                 )}
-              </div>
+              </label>
             ))}
           </div>
         </div>
@@ -2278,21 +2274,19 @@ function TeacherFormContent({
             </div>
             {/* Subject checkboxes for active class */}
             {activeClassTab && activeClassSubjects.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 border rounded-md p-3">
+              <div className="grid grid-cols-2 gap-2 border rounded-md p-3 relative z-10">
                 {activeClassSubjects.map((sub) => (
-                  <div key={sub} className="flex items-center gap-2">
+                  <label key={sub} htmlFor={`tsub-${activeClassTab}-${sub}`} className="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-muted/50 rounded px-1 relative z-10">
                     <Checkbox
                       id={`tsub-${activeClassTab}-${sub}`}
                       checked={(classSubjects[activeClassTab] || []).includes(sub)}
                       onCheckedChange={() => toggleSubject(activeClassTab, sub)}
+                      className="pointer-events-auto"
                     />
-                    <Label
-                      htmlFor={`tsub-${activeClassTab}-${sub}`}
-                      className="text-sm font-normal cursor-pointer"
-                    >
+                    <span className="text-sm font-normal">
                       {sub}
-                    </Label>
-                  </div>
+                    </span>
+                  </label>
                 ))}
               </div>
             )}

@@ -5,6 +5,8 @@ import {
   getCurrentDateString,
   CLASS_SUBJECTS,
   resolveClassName,
+  parseTeacherSubjects,
+  getAllSubjectsFromClassMap,
 } from "@/lib/constants";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -298,15 +300,9 @@ export async function GET(request: NextRequest) {
             (l) => l.userId === teacher.userId
           );
 
-          // Get teacher's subjects
-          let teacherSubjects: string[] = [];
-          if (teacher.subjects) {
-            try {
-              teacherSubjects = JSON.parse(teacher.subjects);
-            } catch {
-              teacherSubjects = [];
-            }
-          }
+          // Get teacher's subjects - supports both NEW format (Record<string, string[]>) and OLD format (string[])
+          const teacherClassSubjects = parseTeacherSubjects(teacher.subjects);
+          const teacherSubjects = getAllSubjectsFromClassMap(teacherClassSubjects);
 
           const daysInMonth = new Date(year, mon, 0).getDate();
           const dailyStatus: Record<

@@ -109,3 +109,25 @@ Work Log:
 Stage Summary:
 - Auth state persists across page refreshes
 - No hydration mismatch issues
+
+---
+Task ID: 8
+Agent: Main
+Task: Fix Teacher Register + Class-Subject Mapping + Attendance Flow + UI Alignment
+
+Work Log:
+- Fixed API Report routes (daily + monthly) to use parseTeacherSubjects() and getAllSubjectsFromClassMap() instead of raw JSON.parse that assumed flat array format - this was causing crashes when teacher subjects are stored as Record<string, string[]>
+- Fixed Teacher Form checkbox not clickable - added z-index (relative z-10) to class and subject checkbox containers, wrapped checkboxes in <label> elements for proper click handling, added pointer-events-auto
+- Fixed Student Form checkbox similarly with z-index and label wrappers
+- Fixed Teacher Dashboard Mark Attendance flow - reordered selectors to Date → Class → Subject (class must be selected before subject)
+- Fixed Teacher Dashboard student filtering - added filteredStudents useMemo that filters by selected subject, added displayStatuses useMemo for status management, students now require both class AND subject selection to appear
+- Fixed UI text alignment in blue boxes - added text-center to blue CardHeader sections, added justify-center to CardTitle flex containers in teacher and student dashboards
+- Fixed admin DashboardTab stat cards - added text-center and flex justify-center for proper centering
+- Added BookOpen icon import to teacher dashboard
+
+Stage Summary:
+- API report routes now correctly handle new Record<string, string[]> teacher subjects format
+- Teacher form checkboxes are now clickable with proper z-index and label wrappers
+- Mark Attendance flow is now: Select Class → Select Subject → See Students (filtered by both)
+- Blue box headers have centered text in teacher and student dashboards
+- No cross-contamination between class-subject mappings

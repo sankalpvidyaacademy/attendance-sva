@@ -20,6 +20,7 @@ import {
   X,
   Sun,
   Moon,
+  BookOpen,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -263,17 +264,30 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
       }
 
       setStudents(studentList);
-      const initial: Record<string, string> = {};
-      for (const s of studentList) {
-        initial[s.userId] = SUBJECT_ATTENDANCE_STATUS.PRESENT;
-      }
-      setStudentStatuses(initial);
     } catch {
       toast.error("Failed to load students");
     } finally {
       setStudentsLoading(false);
     }
   }, [teacherClassSubjects]);
+
+  // ── Filter students by selected subject ──
+  const filteredStudents = useMemo(() => {
+    if (!markSubject) return students;
+    return students.filter((s) => {
+      const studentSubjects: string[] = Array.isArray((s as any).subjects) ? (s as any).subjects : [];
+      return studentSubjects.includes(markSubject);
+    });
+  }, [students, markSubject]);
+
+  // ── Initialize statuses for filtered students ──
+  const displayStatuses = useMemo(() => {
+    const initial: Record<string, string> = {};
+    for (const s of filteredStudents) {
+      initial[s.userId] = studentStatuses[s.userId] || SUBJECT_ATTENDANCE_STATUS.PRESENT;
+    }
+    return initial;
+  }, [filteredStudents, studentStatuses]);
 
   // ── Fetch leave requests ──
   const fetchLeaves = useCallback(async () => {
@@ -318,13 +332,13 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
       toast.error("Please select date, subject, and class");
       return;
     }
-    if (students.length === 0) {
-      toast.error("No students found");
+    if (filteredStudents.length === 0) {
+      toast.error("No students found for this subject");
       return;
     }
     setMarkSaving(true);
     try {
-      const promises = students.map((student) =>
+      const promises = filteredStudents.map((student) =>
         fetch("/api/subject-attendance", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -587,9 +601,9 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "attendance" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] text-center"
               >
-                <CardTitle className="text-primary-foreground flex items-center gap-2">
+                <CardTitle className="text-primary-foreground flex items-center justify-center gap-2">
                   <ClipboardCheck className="size-5" />
                   My Attendance History
                 </CardTitle>
@@ -708,9 +722,9 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "mark" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] text-center"
               >
-                <CardTitle className="text-primary-foreground flex items-center gap-2">
+                <CardTitle className="text-primary-foreground flex items-center justify-center gap-2">
                   <CalendarDays className="size-5" />
                   Mark Subject Attendance
                 </CardTitle>
@@ -749,36 +763,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     </Popover>
                   </div>
 
-                  {/* Subject */}
-                  <div className="space-y-2">
-                    <Label className="font-medium">Subject</Label>
-                    <Select value={markSubject} onValueChange={setMarkSubject}>
-                      <SelectTrigger className="w-full rounded-xl">
-                        <SelectValue placeholder={markClass ? "Select subject" : "Select class first"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {markClass && teacherClassSubjects[markClass] ? (
-                          teacherClassSubjects[markClass].length > 0 ? (
-                            teacherClassSubjects[markClass].map((subj) => (
-                              <SelectItem key={subj} value={subj}>
-                                {subj}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <SelectItem value="none" disabled>
-                              No subjects for this class
-                            </SelectItem>
-                          )
-                        ) : (
-                          <SelectItem value="none" disabled>
-                            {markClass ? "No subjects assigned for this class" : "Select a class first"}
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Class */}
+                  {/* Class - Select before Subject */}
                   <div className="space-y-2">
                     <Label className="font-medium">Class</Label>
                     <Select
@@ -807,6 +792,35 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Subject - Depends on Class */}
+                  <div className="space-y-2">
+                    <Label className="font-medium">Subject</Label>
+                    <Select value={markSubject} onValueChange={setMarkSubject}>
+                      <SelectTrigger className="w-full rounded-xl">
+                        <SelectValue placeholder={markClass ? "Select subject" : "Select class first"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {markClass && teacherClassSubjects[markClass] ? (
+                          teacherClassSubjects[markClass].length > 0 ? (
+                            teacherClassSubjects[markClass].map((subj) => (
+                              <SelectItem key={subj} value={subj}>
+                                {subj}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="none" disabled>
+                              No subjects for this class
+                            </SelectItem>
+                          )
+                        ) : (
+                          <SelectItem value="none" disabled>
+                            {markClass ? "No subjects assigned for this class" : "Select a class first"}
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Students list */}
@@ -815,15 +829,20 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                     <Loader2 className="size-6 animate-spin text-primary" />
                     <span className="ml-2 text-sm text-muted-foreground">Loading students...</span>
                   </div>
-                ) : markClass && students.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <UserCircle className="size-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">No students found in {markClass}</p>
-                  </div>
                 ) : !markClass ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <CalendarDays className="size-12 mx-auto mb-3 opacity-30" />
                     <p className="text-sm">Select a class to see students</p>
+                  </div>
+                ) : !markSubject ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <BookOpen className="size-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">Select a subject to see students</p>
+                  </div>
+                ) : filteredStudents.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <UserCircle className="size-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No students found for {markSubject} in {markClass}</p>
                   </div>
                 ) : (
                   <>
@@ -839,14 +858,14 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {students.map((student, idx) => (
+                            {filteredStudents.map((student, idx) => (
                               <TableRow key={student.userId} className="hover:bg-muted/50 transition-colors">
                                 <TableCell className="text-muted-foreground">{idx + 1}</TableCell>
                                 <TableCell className="font-medium">{student.name}</TableCell>
                                 <TableCell className="text-muted-foreground text-xs">{student.userId}</TableCell>
                                 <TableCell>
                                   <Select
-                                    value={studentStatuses[student.userId] || SUBJECT_ATTENDANCE_STATUS.PRESENT}
+                                    value={displayStatuses[student.userId] || SUBJECT_ATTENDANCE_STATUS.PRESENT}
                                     onValueChange={(val) =>
                                       setStudentStatuses((prev) => ({ ...prev, [student.userId]: val }))
                                     }
@@ -1054,9 +1073,9 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "holidays" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] text-center"
               >
-                <CardTitle className="text-primary-foreground flex items-center gap-2">
+                <CardTitle className="text-primary-foreground flex items-center justify-center gap-2">
                   <PartyPopper className="size-5" />
                   Holidays
                 </CardTitle>
