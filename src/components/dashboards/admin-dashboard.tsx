@@ -2137,15 +2137,18 @@ function TeacherFormContent({
   const [saving, setSaving] = useState(false);
   const [activeClassTab, setActiveClassTab] = useState<string>("");
 
-  // All classes the teacher is assigned to
+  // All classes the teacher is assigned to (for submit validation only)
   const assignedClasses = getTeacherClasses(classSubjects);
+
+  // All selected classes (including those with 0 subjects picked so far)
+  const selectedClasses = Object.keys(classSubjects);
 
   // Set initial active tab
   React.useEffect(() => {
-    if (assignedClasses.length > 0 && !activeClassTab) {
-      setActiveClassTab(assignedClasses[0]);
+    if (selectedClasses.length > 0 && !activeClassTab) {
+      setActiveClassTab(selectedClasses[0]);
     }
-  }, [assignedClasses.length, activeClassTab]);
+  }, [selectedClasses.length, activeClassTab]);
 
   const toggleClass = (cls: string) => {
     setClassSubjects((prev) => {
@@ -2180,12 +2183,12 @@ function TeacherFormContent({
       toast.error("Name is required");
       return;
     }
-    if (assignedClasses.length === 0) {
+    if (selectedClasses.length === 0) {
       toast.error("Please select at least one class");
       return;
     }
     // Validate each class has at least one subject
-    for (const cls of assignedClasses) {
+    for (const cls of selectedClasses) {
       if (!classSubjects[cls] || classSubjects[cls].length === 0) {
         toast.error(`Please select at least one subject for ${cls}`);
         return;
@@ -2195,7 +2198,7 @@ function TeacherFormContent({
     setSaving(true);
     await onSubmit({
       name: name.trim(),
-      classes: assignedClasses,
+      classes: selectedClasses,
       subjects: classSubjects, // Pass the full class-subjects map
       phone: phone.trim(),
     });
@@ -2239,13 +2242,13 @@ function TeacherFormContent({
                 className="flex items-center gap-2 cursor-pointer py-1 px-2 hover:bg-muted/50 rounded-md transition-colors select-none"
               >
                 <Checkbox
-                  checked={assignedClasses.includes(cls)}
+                  checked={cls in classSubjects}
                   className="pointer-events-none"
                 />
                 <span className="text-sm font-normal">
                   {cls}
                 </span>
-                {assignedClasses.includes(cls) && classSubjects[cls] && classSubjects[cls].length > 0 && (
+                {(cls in classSubjects) && classSubjects[cls] && classSubjects[cls].length > 0 && (
                   <span className="text-[10px] text-muted-foreground ml-auto">
                     ({classSubjects[cls].length} subjects)
                   </span>
@@ -2256,12 +2259,12 @@ function TeacherFormContent({
         </div>
 
         {/* Subject Selection per Class */}
-        {assignedClasses.length > 0 && (
+        {selectedClasses.length > 0 && (
           <div className="space-y-2">
             <Label>Subjects per Class</Label>
             {/* Class tabs */}
             <div className="flex flex-wrap gap-1.5 border rounded-md p-2">
-              {assignedClasses.map((cls) => (
+              {selectedClasses.map((cls) => (
                 <button
                   key={cls}
                   type="button"
