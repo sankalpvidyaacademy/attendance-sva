@@ -1629,21 +1629,23 @@ function StudentFormContent({
           </Select>
         </div>
         {availableSubjects.length > 0 && (
-          <div className="space-y-2 relative z-10">
+          <div className="space-y-2">
             <Label>Subjects</Label>
-            <div className="grid grid-cols-2 gap-2 border rounded-md p-3 max-h-48 overflow-y-auto relative z-10">
+            <div className="grid grid-cols-2 gap-2 border rounded-md p-3 max-h-48 overflow-y-auto">
               {availableSubjects.map((sub) => (
-                <label key={sub} htmlFor={`sub-${sub}`} className="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-muted/50 rounded px-1 relative z-10">
+                <div
+                  key={sub}
+                  onClick={() => toggleSubject(sub)}
+                  className="flex items-center gap-2 cursor-pointer py-1 px-2 hover:bg-muted/50 rounded-md transition-colors select-none"
+                >
                   <Checkbox
-                    id={`sub-${sub}`}
                     checked={subjects.includes(sub)}
                     onCheckedChange={() => toggleSubject(sub)}
-                    className="pointer-events-auto"
                   />
                   <span className="text-sm font-normal">
                     {sub}
                   </span>
-                </label>
+                </div>
               ))}
             </div>
           </div>
@@ -2227,16 +2229,18 @@ function TeacherFormContent({
         </div>
 
         {/* Class Selection */}
-        <div className="space-y-2 relative z-10">
+        <div className="space-y-2">
           <Label>Classes *</Label>
-          <div className="grid grid-cols-1 gap-1.5 border rounded-md p-3 max-h-48 overflow-y-auto relative z-10">
+          <div className="grid grid-cols-1 gap-1.5 border rounded-md p-3 max-h-48 overflow-y-auto">
             {CLASSES.map((cls) => (
-              <label key={cls} htmlFor={`tcls-${cls}`} className="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-muted/50 rounded px-1 relative z-10">
+              <div
+                key={cls}
+                onClick={() => toggleClass(cls)}
+                className="flex items-center gap-2 cursor-pointer py-1 px-2 hover:bg-muted/50 rounded-md transition-colors select-none"
+              >
                 <Checkbox
-                  id={`tcls-${cls}`}
                   checked={assignedClasses.includes(cls)}
                   onCheckedChange={() => toggleClass(cls)}
-                  className="pointer-events-auto"
                 />
                 <span className="text-sm font-normal">
                   {cls}
@@ -2246,7 +2250,7 @@ function TeacherFormContent({
                     ({classSubjects[cls].length} subjects)
                   </span>
                 )}
-              </label>
+              </div>
             ))}
           </div>
         </div>
@@ -2274,19 +2278,21 @@ function TeacherFormContent({
             </div>
             {/* Subject checkboxes for active class */}
             {activeClassTab && activeClassSubjects.length > 0 && (
-              <div className="grid grid-cols-2 gap-2 border rounded-md p-3 relative z-10">
+              <div className="grid grid-cols-2 gap-2 border rounded-md p-3">
                 {activeClassSubjects.map((sub) => (
-                  <label key={sub} htmlFor={`tsub-${activeClassTab}-${sub}`} className="flex items-center gap-2 cursor-pointer py-0.5 hover:bg-muted/50 rounded px-1 relative z-10">
+                  <div
+                    key={sub}
+                    onClick={() => toggleSubject(activeClassTab, sub)}
+                    className="flex items-center gap-2 cursor-pointer py-1 px-2 hover:bg-muted/50 rounded-md transition-colors select-none"
+                  >
                     <Checkbox
-                      id={`tsub-${activeClassTab}-${sub}`}
                       checked={(classSubjects[activeClassTab] || []).includes(sub)}
                       onCheckedChange={() => toggleSubject(activeClassTab, sub)}
-                      className="pointer-events-auto"
                     />
                     <span className="text-sm font-normal">
                       {sub}
                     </span>
-                  </label>
+                  </div>
                 ))}
               </div>
             )}

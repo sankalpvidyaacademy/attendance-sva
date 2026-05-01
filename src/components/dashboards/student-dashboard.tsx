@@ -576,7 +576,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               {/* ── Attendance History Card ── */}
               <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
                 <CardHeader
-                  className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] text-center"
+                  className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] flex flex-col items-center justify-center text-center"
                 >
                   <CardTitle className="text-primary-foreground flex items-center justify-center gap-2">
                     <ClipboardCheck className="size-5" />
@@ -695,7 +695,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               {/* ── Subject-wise Attendance Card ── */}
               <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
                 <CardHeader
-                  className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
+                  className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] flex flex-col items-center justify-center text-center"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
@@ -769,7 +769,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               {/* ── Monthly Summary Card ── */}
               <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
                 <CardHeader
-                  className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
+                  className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] flex flex-col items-center justify-center text-center"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
@@ -847,7 +847,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
           {activeTab === "leave" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93]"
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] flex flex-col items-center justify-center text-center"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
@@ -1008,7 +1008,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
           {activeTab === "holidays" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                  className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] text-center"
+                  className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] flex flex-col items-center justify-center text-center"
                 >
                 <CardTitle className="text-primary-foreground flex items-center justify-center gap-2">
                   <PartyPopper className="size-5" />

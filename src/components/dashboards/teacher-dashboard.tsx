@@ -601,7 +601,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "attendance" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] text-center"
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] flex flex-col items-center justify-center text-center"
               >
                 <CardTitle className="text-primary-foreground flex items-center justify-center gap-2">
                   <ClipboardCheck className="size-5" />
@@ -722,7 +722,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "mark" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] text-center"
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] flex flex-col items-center justify-center text-center"
               >
                 <CardTitle className="text-primary-foreground flex items-center justify-center gap-2">
                   <CalendarDays className="size-5" />
@@ -1073,7 +1073,7 @@ export function TeacherDashboard({ user }: TeacherDashboardProps) {
           {activeTab === "holidays" && (
             <Card className="border-0 shadow-xl rounded-2xl overflow-hidden">
               <CardHeader
-                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] text-center"
+                className="pb-4 bg-primary dark:bg-gradient-to-r dark:from-[#1A1953] dark:to-[#162E93] flex flex-col items-center justify-center text-center"
               >
                 <CardTitle className="text-primary-foreground flex items-center justify-center gap-2">
                   <PartyPopper className="size-5" />

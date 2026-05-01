@@ -131,3 +131,23 @@ Stage Summary:
 - Mark Attendance flow is now: Select Class → Select Subject → See Students (filtered by both)
 - Blue box headers have centered text in teacher and student dashboards
 - No cross-contamination between class-subject mappings
+
+---
+Task ID: 9
+Agent: Main
+Task: Final Fix: Teacher Register Class Not Selectable + Subject Load + Blue Box Alignment
+
+Work Log:
+- Fixed Teacher Form class/subject checkboxes NOT clickable - root cause was <label> with htmlFor not properly forwarding clicks to Radix Checkbox (which is a button, not input). Changed <label> to <div> with explicit onClick handlers, removed htmlFor/id attributes, removed pointer-events-auto hacks, removed unnecessary relative z-10 classes
+- Fixed Student Form subject checkboxes with same pattern
+- Verified CLASS_SUBJECTS in constants.ts matches exact spec (13 classes, correct subjects per class)
+- Verified Teacher Dashboard Mark Attendance flow works correctly: Select Class → Select Subject → Filtered Students
+- Fixed blue CardHeader text alignment - added `flex flex-col items-center justify-center` before `text-center` to override shadcn CardHeader's CSS grid `items-start` layout. Applied to all bg-primary CardHeaders in teacher-dashboard.tsx (3 with text-center, Leave tab left unchanged due to button) and student-dashboard.tsx (5 CardHeaders)
+- Fixed JSX parsing error where conditional closing `)}` was split into `)` and `}` on separate lines
+
+Stage Summary:
+- Teacher class/subject checkboxes now work properly with <div onClick> pattern instead of <label htmlFor>
+- Student subject checkboxes also fixed
+- Blue CardHeader sections now have properly centered text (both horizontally and vertically)
+- All 4 fixes from user spec implemented without touching backend, Firebase, QR system, or working layout
+- Lint passes, dev server compiles and runs successfully
