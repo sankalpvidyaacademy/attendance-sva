@@ -1640,6 +1640,7 @@ function StudentFormContent({
                 >
                   <Checkbox
                     checked={subjects.includes(sub)}
+                    className="pointer-events-none"
                   />
                   <span className="text-sm font-normal">
                     {sub}
@@ -2239,6 +2240,7 @@ function TeacherFormContent({
               >
                 <Checkbox
                   checked={assignedClasses.includes(cls)}
+                  className="pointer-events-none"
                 />
                 <span className="text-sm font-normal">
                   {cls}
@@ -2285,6 +2287,7 @@ function TeacherFormContent({
                   >
                     <Checkbox
                       checked={(classSubjects[activeClassTab] || []).includes(sub)}
+                      className="pointer-events-none"
                     />
                     <span className="text-sm font-normal">
                       {sub}
