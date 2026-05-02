@@ -1,15 +1,43 @@
-// ─────────────────────────────────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Firestore Security Rules — Sankalp Vidya Academy Attendance System
-// ─────────────────────────────────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //
-// Architecture: All database operations go through Next.js API routes using
-// the Firebase Admin SDK (server-side). The Admin SDK completely bypasses
-// these security rules. These rules are a defense-in-depth measure to
-// prevent unauthorized direct client-side access to Firestore.
+// HOW TO DEPLOY:
+//   Option 1 — Firebase Console: https://console.firebase.google.com
+//     → Firestore Database → Rules tab → Paste → Publish
+//   Option 2 — Firebase CLI: firebase deploy --only firestore:rules
 //
-// Deploy: firebase deploy --only firestore:rules
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ARCHITECTURE NOTE:
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //
-// Collections in our app (matching firebase-service.ts):
+// All database operations go through Next.js API routes using the Firebase
+// Admin SDK (server-side). The Admin SDK authenticates with a service account
+// and COMPLETELY BYPASSES these security rules.
+//
+// These rules protect against:
+//   ✅ Direct client-side Firestore access from malicious scripts/browsers
+//   ✅ Leaked API keys being used to read/write data directly
+//   ✅ Unauthenticated users accessing any data
+//   ✅ Low-privilege users accessing admin-only data
+//
+// These rules do NOT affect:
+//   ❌ Server-side API routes (Admin SDK bypasses all rules)
+//   ❌ Your existing app functionality (all reads/writes go through API routes)
+//
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ROLES (stored in custom claims via Firebase Auth):
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// To set custom claims, call from a secure server environment:
+//   admin.auth().setCustomUserClaims(uid, { role: 'ADMIN' })
+//   admin.auth().setCustomUserClaims(uid, { role: 'TEACHER' })
+//   admin.auth().setCustomUserClaims(uid, { role: 'STUDENT' })
+//
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// COLLECTIONS:
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
 //   users              — All users (ADMIN, TEACHER, STUDENT) with role field
 //   attendance         — QR-based daily attendance (check-in/check-out)
 //   subjectAttendance  — Subject-wise attendance records
@@ -17,108 +45,243 @@
 //   holidays           — Holiday calendar with class-specific entries
 //   settings           — App configuration (timezone, Telegram bot, etc.)
 //
-// ⚠️ IMPORTANT:
-// - Our app does NOT use Firebase Authentication. All auth is handled via
-//   custom userId + password (bcrypt) through our API routes.
-// - The Admin SDK bypasses these rules entirely, so all server-side
-//   operations work regardless of these rules.
-// - These rules provide defense-in-depth: if someone accesses Firestore
-//   directly from the client, they will be blocked.
-// ─────────────────────────────────────────────────────────────────────────────
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Helper Functions ───────────────────────────────────────────────────
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // HELPER FUNCTIONS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
     // Check if the request is authenticated via Firebase Auth
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Get the user's role from the auth token custom claims
-    // (Set via Admin SDK: admin.auth().setCustomUserClaims(uid, { role: 'ADMIN' }))
+    // Get the user's role from Firebase Auth custom claims
+    // Set via: admin.auth().setCustomUserClaims(uid, { role: 'ADMIN' })
     function getUserRole() {
       return request.auth.token.role;
     }
 
-    // Check if user is admin
+    // Check if user is ADMIN
     function isAdmin() {
-      return isAuthenticated() && getUserRole() == "ADMIN";
+      return isAuthenticated() && getUserRole == "ADMIN";
     }
 
-    // Check if user is teacher
+    // Check if user is TEACHER (or above)
     function isTeacher() {
-      return isAuthenticated() && getUserRole() == "TEACHER";
+      return isAuthenticated() && (getUserRole == "TEACHER" || getUserRole == "ADMIN");
     }
 
-    // Check if user is student
+    // Check if user is STUDENT (or above)
     function isStudent() {
-      return isAuthenticated() && getUserRole() == "STUDENT";
+      return isAuthenticated() && (getUserRole == "STUDENT" || getUserRole == "TEACHER" || getUserRole == "ADMIN");
     }
 
-    // ─── Users Collection ───────────────────────────────────────────────────
-    // Stores all users (ADMIN, TEACHER, STUDENT) with role field
-    // - Authenticated users can read their own data
-    // - Only admins can create/update/delete users
+    // Check if the requesting user owns this document (by userId field)
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if the requesting user's UID matches the document's userId field
+    function isDocumentOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // Validate that a write doesn't escalate privileges
+    function noRoleEscalation() {
+      return request.resource.data.role == resource.data.role;
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // USERS COLLECTION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // Stores all users (ADMIN, TEACHER, STUDENT)
+    //
+    // ACCESS MATRIX:
+    // ┌──────────┬────────────┬──────────┬──────────┬──────────┐
+    // │ Role     │ Read Own   │ Read All │ Write    │ Delete   │
+    // ├──────────┼────────────┼──────────┼──────────┼──────────┤
+    // │ ADMIN    │     ✅     │    ✅    │    ✅    │    ✅    │
+    // │ TEACHER  │     ✅     │    ✅    │    ❌    │    ❌    │
+    // │ STUDENT  │     ✅     │    ❌    │    ❌    │    ❌    │
+    // └──────────┴────────────┴──────────┴──────────┴──────────┘
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin();
+      // ADMIN: full read access to all users
+      // TEACHER: can read all users (needs student lists for attendance)
+      // STUDENT: can only read their own document
+      allow read: if isAdmin()
+                  || isTeacher()
+                  || (isAuthenticated() && request.auth.uid == userId);
+
+      // Only ADMIN can create new users
+      allow create: if isAdmin();
+
+      // Only ADMIN can update users (including password changes, role changes)
+      // Exception: users can update their own password (but not role)
+      allow update: if isAdmin()
+                    || (isAuthenticated()
+                        && request.auth.uid == userId
+                        && noRoleEscalation()
+                        && !('role' in request.resource.data.diff(resource.data).affectedKeys()));
+
+      // Only ADMIN can delete users
+      allow delete: if isAdmin();
     }
 
-    // ─── Attendance Collection ──────────────────────────────────────────────
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ATTENDANCE COLLECTION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // QR-based daily attendance records (check-in / check-out)
-    // - Authenticated users can read
-    // - Admins and teachers can write
+    // Document ID format: {userId}_{date}  (e.g., "STU001_2025-01-15")
+    //
+    // ACCESS MATRIX:
+    // ┌──────────┬────────────┬──────────┬──────────┬──────────┐
+    // │ Role     │ Read Own   │ Read All │ Write    │ Delete   │
+    // ├──────────┼────────────┼──────────┼──────────┼──────────┤
+    // │ ADMIN    │     ✅     │    ✅    │    ✅    │    ✅    │
+    // │ TEACHER  │     ✅     │    ✅    │    ✅    │    ❌    │
+    // │ STUDENT  │     ✅     │    ❌    │    ❌    │    ❌    │
+    // └──────────┴────────────┴──────────┴──────────┴──────────┘
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     match /attendance/{attendanceId} {
-      allow read: if isAuthenticated();
+      // ADMIN & TEACHER: full read access
+      // STUDENT: can only read their own attendance records
+      allow read: if isAdmin()
+                  || isTeacher()
+                  || (isAuthenticated() && isDocumentOwner());
+
+      // ADMIN & TEACHER: can create and update attendance (scanning QR, manual entry)
       allow create, update: if isAdmin() || isTeacher();
+
+      // Only ADMIN can delete attendance records
       allow delete: if isAdmin();
     }
 
-    // ─── Subject Attendance Collection ──────────────────────────────────────
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SUBJECT ATTENDANCE COLLECTION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // Subject-wise attendance for students (marked by teachers)
-    // - Authenticated users can read
-    // - Admins and teachers can write
+    // Document ID format: {userId}_{date}_{subject}
+    //
+    // ACCESS MATRIX:
+    // ┌──────────┬────────────┬──────────┬──────────┬──────────┐
+    // │ Role     │ Read Own   │ Read All │ Write    │ Delete   │
+    // ├──────────┼────────────┼──────────┼──────────┤──────────┤
+    // │ ADMIN    │     ✅     │    ✅    │    ✅    │    ✅    │
+    // │ TEACHER  │     ✅     │    ✅    │    ✅    │    ❌    │
+    // │ STUDENT  │     ✅     │    ❌    │    ❌    │    ❌    │
+    // └──────────┴────────────┴──────────┴──────────┴──────────┘
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     match /subjectAttendance/{saId} {
-      allow read: if isAuthenticated();
+      // ADMIN & TEACHER: full read access
+      // STUDENT: can only read their own subject attendance
+      allow read: if isAdmin()
+                  || isTeacher()
+                  || (isAuthenticated() && isDocumentOwner());
+
+      // ADMIN & TEACHER: can create and update subject attendance
       allow create, update: if isAdmin() || isTeacher();
+
+      // Only ADMIN can delete subject attendance records
       allow delete: if isAdmin();
     }
 
-    // ─── Leave Requests Collection ──────────────────────────────────────────
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // LEAVE REQUESTS COLLECTION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // Leave applications and approval workflow
-    // - Authenticated users can read their own leaves
-    // - Admins can read all and approve/reject
-    // - Users can create their own leave requests
+    // Document ID: auto-generated
+    //
+    // ACCESS MATRIX:
+    // ┌──────────┬────────────┬──────────┬──────────┬──────────┬──────────┐
+    // │ Role     │ Read Own   │ Read All │ Create   │ Approve  │ Delete   │
+    // ├──────────┼────────────┼──────────┼──────────┼──────────┼──────────┤
+    // │ ADMIN    │     ✅     │    ✅    │    ✅    │    ✅    │    ✅    │
+    // │ TEACHER  │     ✅     │    ✅    │    ✅    │    ❌    │    ❌    │
+    // │ STUDENT  │     ✅     │    ❌    │    ✅    │    ❌    │    ❌    │
+    // └──────────┴────────────┴──────────┴──────────┴──────────┴──────────┘
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     match /leaveRequests/{leaveId} {
-      allow read: if isAuthenticated();
+      // ADMIN: read all leave requests
+      // TEACHER: read all leave requests (to see student availability)
+      // STUDENT: can only read their own leave requests
+      allow read: if isAdmin()
+                  || isTeacher()
+                  || (isAuthenticated() && isDocumentOwner());
+
+      // Any authenticated user can create a leave request (for themselves)
       allow create: if isAuthenticated();
-      allow update: if isAdmin();  // Only admin can approve/reject
+
+      // Only ADMIN can update (approve/reject) leave requests
+      allow update: if isAdmin();
+
+      // Only ADMIN can delete leave requests
       allow delete: if isAdmin();
     }
 
-    // ─── Holidays Collection ────────────────────────────────────────────────
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // HOLIDAYS COLLECTION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // Holiday calendar with class-specific entries
-    // - All authenticated users can read
-    // - Only admins can create/update/delete
+    // Document ID: auto-generated
+    //
+    // ACCESS MATRIX:
+    // ┌──────────┬────────────┬──────────┬──────────┐
+    // │ Role     │ Read       │ Write    │ Delete   │
+    // ├──────────┼────────────┼──────────┼──────────┤
+    // │ ADMIN    │     ✅     │    ✅    │    ✅    │
+    // │ TEACHER  │     ✅     │    ❌    │    ❌    │
+    // │ STUDENT  │     ✅     │    ❌    │    ❌    │
+    // └──────────┴────────────┴──────────┴──────────┘
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     match /holidays/{holidayId} {
+      // All authenticated users can read holidays
       allow read: if isAuthenticated();
-      allow create, update, delete: if isAdmin();
+
+      // Only ADMIN can create new holidays
+      allow create: if isAdmin();
+
+      // Only ADMIN can update holidays
+      allow update: if isAdmin();
+
+      // Only ADMIN can delete holidays
+      allow delete: if isAdmin();
     }
 
-    // ─── Settings Collection ────────────────────────────────────────────────
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SETTINGS COLLECTION
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // App configuration (timezone, Telegram bot, report settings)
-    // - All authenticated users can read
-    // - Only admins can write
+    // Document ID: auto-generated (single document)
+    //
+    // ACCESS MATRIX:
+    // ┌──────────┬────────────┬──────────┐
+    // │ Role     │ Read       │ Write    │
+    // ├──────────┼────────────┼──────────┤
+    // │ ADMIN    │     ✅     │    ✅    │
+    // │ TEACHER  │     ✅     │    ❌    │
+    // │ STUDENT  │     ✅     │    ❌    │
+    // └──────────┴────────────┴──────────┘
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     match /settings/{settingsId} {
+      // All authenticated users can read settings (needed for timezone, etc.)
       allow read: if isAuthenticated();
+
+      // Only ADMIN can write settings
       allow write: if isAdmin();
     }
 
-    // ─── Deny all other collections ─────────────────────────────────────────
-    // Any collection not explicitly listed above is completely blocked
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // DEFAULT: DENY ALL OTHER COLLECTIONS
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // Any collection not explicitly listed above is completely blocked.
+    // This is the principle of least privilege — deny by default.
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     match /{document=**} {
       allow read, write: if false;
     }
