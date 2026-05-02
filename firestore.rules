@@ -1,0 +1,22 @@
+// Firestore Security Rules for Sankalp Vidya Academy Attendance System
+// Deploy with: firebase deploy --only firestore:rules
+//
+// IMPORTANT: Since all database operations go through Next.js API routes
+// using the Firebase Admin SDK (server-side), the client SDK is not used
+// for direct Firestore access. These rules are set to deny all client-side
+// access for security. The Admin SDK bypasses these rules.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Deny all client-side access by default ───────────────────────────
+    // All data access goes through Next.js API routes using Admin SDK,
+    // which bypasses Firestore Security Rules. This ensures no client
+    // can directly read or write to the database.
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,7 +1,6 @@
 import { firestore } from "./firebase-admin";
 import {
   Timestamp,
-  DocumentData,
 } from "firebase-admin/firestore";
 
 // ─── Firestore collection names ─────────────────────────────────────────────
@@ -29,8 +28,9 @@ function serializeTimestamps(obj: Record<string, unknown>): Record<string, unkno
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value instanceof Timestamp) {
-      // Convert Firestore Timestamps to ISO strings for JSON compatibility
-      result[key] = value.toDate().toISOString();
+      // Convert Firestore Timestamps to JavaScript Date objects
+      // This matches Prisma's behavior so API routes can call .toISOString() etc.
+      result[key] = value.toDate();
     } else if (value && typeof value === "object" && !Array.isArray(value)) {
       result[key] = serializeTimestamps(value as Record<string, unknown>);
     } else {
@@ -38,6 +38,34 @@ function serializeTimestamps(obj: Record<string, unknown>): Record<string, unkno
     }
   }
   return result;
+}
+
+// ─── Helper: apply select to filter fields from a result ────────────────────
+function applySelect(
+  item: Record<string, unknown>,
+  select: Record<string, boolean>
+): Record<string, unknown> {
+  const selected: Record<string, unknown> = { id: item.id };
+  for (const key of Object.keys(select)) {
+    if (select[key]) {
+      selected[key] = item[key];
+    }
+  }
+  return selected;
+}
+
+// ─── Helper: normalize orderBy to array of [field, direction] pairs ─────────
+// Supports both: { field: "asc" } and [{ field: "asc" }, { field: "desc" }]
+type OrderByInput = Record<string, string> | Array<Record<string, string>> | undefined;
+
+function normalizeOrderBy(orderBy: OrderByInput): Array<[string, "asc" | "desc"]> {
+  if (!orderBy) return [];
+  if (Array.isArray(orderBy)) {
+    return orderBy.flatMap((item) =>
+      Object.entries(item).map(([field, direction]) => [field, direction as "asc" | "desc"])
+    );
+  }
+  return Object.entries(orderBy).map(([field, direction]) => [field, direction as "asc" | "desc"]);
 }
 
 // ─── In-memory filter for complex queries Firestore can't handle ─────────────
@@ -80,10 +108,16 @@ function filterResults<T extends Record<string, unknown>>(
         continue;
       }
 
-      // Range queries are handled by Firestore, skip in-memory
+      // Range queries — always filter in-memory too for correctness
+      // (Firestore may not have received all range conditions due to index limits)
       if (typeof value === "object" && value !== null && !Array.isArray(value)) {
         const rangeOps = value as Record<string, unknown>;
-        if ("gte" in rangeOps || "lte" in rangeOps || "lt" in rangeOps) continue;
+        const itemVal = item[field];
+        if ("gte" in rangeOps && itemVal < rangeOps.gte) return false;
+        if ("lte" in rangeOps && itemVal > rangeOps.lte) return false;
+        if ("lt" in rangeOps && itemVal >= rangeOps.lt) return false;
+        // Don't continue — fall through in case there are other checks
+        continue;
       }
 
       // Simple equality
@@ -94,6 +128,10 @@ function filterResults<T extends Record<string, unknown>>(
 }
 
 // ─── Helper: build Firestore query from Prisma-style where clause ────────────
+// Strategy: Send ONLY equality + in conditions to Firestore.
+// ALL range conditions (gte, lte, lt), OR, and contains are filtered in-memory.
+// This completely avoids needing any Firestore composite indexes.
+// For a school attendance system (small dataset), this is perfectly fine.
 function buildWhereQuery(
   col: FirebaseFirestore.CollectionReference,
   whereClause: Record<string, unknown>
@@ -105,6 +143,12 @@ function buildWhereQuery(
     if (field === "OR") continue; // handled in-memory
     if (typeof value === "object" && value !== null && "contains" in (value as object)) continue; // in-memory
 
+    // Range queries — always filter in-memory to avoid composite index requirements
+    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+      const rangeOps = value as Record<string, unknown>;
+      if ("gte" in rangeOps || "lte" in rangeOps || "lt" in rangeOps) continue; // in-memory
+    }
+
     // { in: [...] }
     if (typeof value === "object" && value !== null && "in" in (value as object)) {
       const arr = (value as { in: unknown[] }).in;
@@ -112,23 +156,6 @@ function buildWhereQuery(
         q = q.where(field, "in", arr);
       } else {
         q = q.where(field, "==", "__IMPOSSIBLE__");
-      }
-      continue;
-    }
-
-    // Range queries
-    if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-      const rangeOps = value as Record<string, unknown>;
-      if ("gte" in rangeOps && "lt" in rangeOps) {
-        q = q.where(field, ">=", rangeOps.gte).where(field, "<", rangeOps.lt);
-      } else if ("gte" in rangeOps && "lte" in rangeOps) {
-        q = q.where(field, ">=", rangeOps.gte).where(field, "<=", rangeOps.lte);
-      } else if ("gte" in rangeOps) {
-        q = q.where(field, ">=", rangeOps.gte);
-      } else if ("lte" in rangeOps) {
-        q = q.where(field, "<=", rangeOps.lte);
-      } else if ("lt" in rangeOps) {
-        q = q.where(field, "<", rangeOps.lt);
       }
       continue;
     }
@@ -179,13 +206,42 @@ function applyUserSelect(
 ): Record<string, unknown> | null {
   if (!user) return null;
   if (!userSelect?.select) return user;
-  const filtered: Record<string, unknown> = {};
-  for (const key of Object.keys(userSelect.select)) {
-    if (userSelect.select[key]) {
-      filtered[key] = user[key];
+  return applySelect(user, userSelect.select);
+}
+
+// ─── Helper: sort results in-memory ────────────────────────────────────────
+// Always sort in-memory to avoid Firestore composite index requirements.
+// For a school attendance system (small dataset), this is perfectly fine.
+function sortResults<T extends Record<string, unknown>>(
+  results: T[],
+  orderBy: OrderByInput
+): T[] {
+  const orderPairs = normalizeOrderBy(orderBy);
+  if (orderPairs.length === 0) return results;
+
+  return results.sort((a, b) => {
+    for (const [field, direction] of orderPairs) {
+      const aVal = a[field];
+      const bVal = b[field];
+      if (aVal === bVal) continue;
+      if (aVal == null) return 1; // nulls last
+      if (bVal == null) return -1; // nulls last
+
+      let cmp = 0;
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        cmp = aVal.localeCompare(bVal);
+      } else if (typeof aVal === "number" && typeof bVal === "number") {
+        cmp = aVal - bVal;
+      } else {
+        cmp = String(aVal).localeCompare(String(bVal));
+      }
+
+      if (cmp !== 0) {
+        return direction === "desc" ? -cmp : cmp;
+      }
     }
-  }
-  return filtered;
+    return 0;
+  });
 }
 
 // ─── Firebase Database Adapter ──────────────────────────────────────────────
@@ -193,22 +249,27 @@ function applyUserSelect(
 
 export const db = {
   user: {
-    async findUnique(args: { where: { id?: string; userId?: string; userId_date?: unknown } }) {
+    async findUnique(args: { where: { id?: string; userId?: string; userId_date?: unknown }; select?: Record<string, boolean> }) {
       const col = firestore.collection(COLLECTIONS.users);
+
+      let result: Record<string, unknown> | null = null;
 
       if (args.where.id) {
         const snap = await col.doc(args.where.id).get();
-        return docToObj(snap);
-      }
-
-      if (args.where.userId) {
+        result = docToObj(snap);
+      } else if (args.where.userId) {
         const q = col.where("userId", "==", args.where.userId).limit(1);
         const snap = await q.get();
-        if (snap.empty) return null;
-        return { id: snap.docs[0].id, ...serializeTimestamps(snap.docs[0].data()!) };
+        if (!snap.empty) {
+          result = { id: snap.docs[0].id, ...serializeTimestamps(snap.docs[0].data()!) };
+        }
       }
 
-      return null;
+      if (!result) return null;
+      if (args.select) {
+        return applySelect(result, args.select);
+      }
+      return result;
     },
 
     async findFirst(args?: { where?: Record<string, unknown>; select?: Record<string, boolean> }) {
@@ -225,11 +286,7 @@ export const db = {
       if (results.length === 0) return null;
 
       if (args?.select) {
-        const selected: Record<string, unknown> = { id: results[0].id };
-        for (const key of Object.keys(args.select)) {
-          if (args.select[key]) selected[key] = (results[0] as Record<string, unknown>)[key];
-        }
-        return selected;
+        return applySelect(results[0], args.select);
       }
 
       return results[0];
@@ -238,32 +295,23 @@ export const db = {
     async findMany(args?: {
       where?: Record<string, unknown>;
       select?: Record<string, boolean>;
-      orderBy?: Record<string, string>;
+      orderBy?: Record<string, string> | Array<Record<string, string>>;
     }) {
       const col = firestore.collection(COLLECTIONS.users);
       const whereClause = args?.where || {};
 
       let q = buildWhereQuery(col, whereClause);
 
-      if (args?.orderBy) {
-        for (const [field, direction] of Object.entries(args.orderBy)) {
-          q = q.orderBy(field, direction as "asc" | "desc");
-        }
-      }
-
       const snap = await q.get();
       let results = snap.docs.map((d) => ({ id: d.id, ...serializeTimestamps(d.data()!) }));
       results = filterResults(results, whereClause);
 
       if (args?.select) {
-        const selectKeys = Object.keys(args.select).filter((k) => args.select![k]);
-        results = results.map((item) => {
-          const selected: Record<string, unknown> = { id: item.id };
-          for (const key of selectKeys) {
-            selected[key] = (item as Record<string, unknown>)[key];
-          }
-          return selected;
-        });
+        results = results.map((item) => applySelect(item, args.select!));
+      }
+
+      if (args?.orderBy) {
+        results = sortResults(results, args.orderBy);
       }
 
       return results;
@@ -317,39 +365,37 @@ export const db = {
   },
 
   attendance: {
-    async findUnique(args: { where: { id?: string; userId_date?: { userId: string; date: string } } }) {
+    async findUnique(args: { where: { id?: string; userId_date?: { userId: string; date: string } }; select?: Record<string, boolean> }) {
       const col = firestore.collection(COLLECTIONS.attendance);
+
+      let result: Record<string, unknown> | null = null;
 
       if (args.where.id) {
         const snap = await col.doc(args.where.id).get();
-        return docToObj(snap);
-      }
-
-      if (args.where.userId_date) {
+        result = docToObj(snap);
+      } else if (args.where.userId_date) {
         const { userId, date } = args.where.userId_date;
         const docId = attendanceDocId(userId, date);
         const snap = await col.doc(docId).get();
-        return docToObj(snap);
+        result = docToObj(snap);
       }
 
-      return null;
+      if (!result) return null;
+      if (args.select) {
+        return applySelect(result, args.select);
+      }
+      return result;
     },
 
     async findMany(args?: {
       where?: Record<string, unknown>;
       include?: Record<string, unknown>;
-      orderBy?: Record<string, string>;
+      orderBy?: Record<string, string> | Array<Record<string, string>>;
     }) {
       const col = firestore.collection(COLLECTIONS.attendance);
       const whereClause = args?.where || {};
 
       let q = buildWhereQuery(col, whereClause);
-
-      if (args?.orderBy) {
-        for (const [field, direction] of Object.entries(args.orderBy)) {
-          q = q.orderBy(field, direction as "asc" | "desc");
-        }
-      }
 
       const snap = await q.get();
       let results = snap.docs.map((d) => ({ id: d.id, ...serializeTimestamps(d.data()!) }));
@@ -362,6 +408,10 @@ export const db = {
           const user = userMap.get(record.userId as string) || null;
           return { ...record, user: applyUserSelect(user, userSelect) };
         });
+      }
+
+      if (args?.orderBy) {
+        results = sortResults(results, args.orderBy);
       }
 
       return results;
@@ -428,18 +478,12 @@ export const db = {
     async findMany(args?: {
       where?: Record<string, unknown>;
       include?: Record<string, unknown>;
-      orderBy?: Record<string, string>;
+      orderBy?: Record<string, string> | Array<Record<string, string>>;
     }) {
       const col = firestore.collection(COLLECTIONS.subjectAttendance);
       const whereClause = args?.where || {};
 
       let q = buildWhereQuery(col, whereClause);
-
-      if (args?.orderBy) {
-        for (const [field, direction] of Object.entries(args.orderBy)) {
-          q = q.orderBy(field, direction as "asc" | "desc");
-        }
-      }
 
       const snap = await q.get();
       let results = snap.docs.map((d) => ({ id: d.id, ...serializeTimestamps(d.data()!) }));
@@ -452,6 +496,10 @@ export const db = {
           const user = userMap.get(record.userId as string) || null;
           return { ...record, user: applyUserSelect(user, userSelect) };
         });
+      }
+
+      if (args?.orderBy) {
+        results = sortResults(results, args.orderBy);
       }
 
       return results;
@@ -487,18 +535,12 @@ export const db = {
     async findMany(args?: {
       where?: Record<string, unknown>;
       include?: Record<string, unknown>;
-      orderBy?: Record<string, string>;
+      orderBy?: Record<string, string> | Array<Record<string, string>>;
     }) {
       const col = firestore.collection(COLLECTIONS.leaveRequests);
       const whereClause = args?.where || {};
 
       let q = buildWhereQuery(col, whereClause);
-
-      if (args?.orderBy) {
-        for (const [field, direction] of Object.entries(args.orderBy)) {
-          q = q.orderBy(field, direction as "asc" | "desc");
-        }
-      }
 
       const snap = await q.get();
       let results = snap.docs.map((d) => ({ id: d.id, ...serializeTimestamps(d.data()!) }));
@@ -511,6 +553,10 @@ export const db = {
           const user = userMap.get(record.userId as string) || null;
           return { ...record, user: applyUserSelect(user, userSelect) };
         });
+      }
+
+      if (args?.orderBy) {
+        results = sortResults(results, args.orderBy);
       }
 
       return results;
@@ -575,21 +621,19 @@ export const db = {
   },
 
   holiday: {
-    async findMany(args?: { where?: Record<string, unknown>; orderBy?: Record<string, string> }) {
+    async findMany(args?: { where?: Record<string, unknown>; orderBy?: Record<string, string> | Array<Record<string, string>> }) {
       const col = firestore.collection(COLLECTIONS.holidays);
       const whereClause = args?.where || {};
 
       let q = buildWhereQuery(col, whereClause);
 
-      if (args?.orderBy) {
-        for (const [field, direction] of Object.entries(args.orderBy)) {
-          q = q.orderBy(field, direction as "asc" | "desc");
-        }
-      }
-
       const snap = await q.get();
       let results = snap.docs.map((d) => ({ id: d.id, ...serializeTimestamps(d.data()!) }));
       results = filterResults(results, whereClause);
+
+      if (args?.orderBy) {
+        results = sortResults(results, args.orderBy);
+      }
 
       return results;
     },
@@ -653,8 +697,8 @@ export const db = {
     },
   },
 
-  // Transaction stub — Firestore uses batch writes for atomicity
-  async $transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T> {
-    return fn({});
+  // Transaction — pass `db` as `tx` so that `tx.attendance.create(...)` etc. work
+  async $transaction<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {
+    return fn(db);
   },
 };
