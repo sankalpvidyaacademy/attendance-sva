@@ -1,20 +1,124 @@
-// Firestore Security Rules for Sankalp Vidya Academy Attendance System
-// Deploy with: firebase deploy --only firestore:rules
+// ─────────────────────────────────────────────────────────────────────────────
+// Firestore Security Rules — Sankalp Vidya Academy Attendance System
+// ─────────────────────────────────────────────────────────────────────────────
 //
-// IMPORTANT: Since all database operations go through Next.js API routes
-// using the Firebase Admin SDK (server-side), the client SDK is not used
-// for direct Firestore access. These rules are set to deny all client-side
-// access for security. The Admin SDK bypasses these rules.
+// Architecture: All database operations go through Next.js API routes using
+// the Firebase Admin SDK (server-side). The Admin SDK completely bypasses
+// these security rules. These rules are a defense-in-depth measure to
+// prevent unauthorized direct client-side access to Firestore.
+//
+// Deploy: firebase deploy --only firestore:rules
+//
+// Collections in our app (matching firebase-service.ts):
+//   users              — All users (ADMIN, TEACHER, STUDENT) with role field
+//   attendance         — QR-based daily attendance (check-in/check-out)
+//   subjectAttendance  — Subject-wise attendance records
+//   leaveRequests      — Leave applications and approvals
+//   holidays           — Holiday calendar with class-specific entries
+//   settings           — App configuration (timezone, Telegram bot, etc.)
+//
+// ⚠️ IMPORTANT:
+// - Our app does NOT use Firebase Authentication. All auth is handled via
+//   custom userId + password (bcrypt) through our API routes.
+// - The Admin SDK bypasses these rules entirely, so all server-side
+//   operations work regardless of these rules.
+// - These rules provide defense-in-depth: if someone accesses Firestore
+//   directly from the client, they will be blocked.
+// ─────────────────────────────────────────────────────────────────────────────
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ─── Deny all client-side access by default ───────────────────────────
-    // All data access goes through Next.js API routes using Admin SDK,
-    // which bypasses Firestore Security Rules. This ensures no client
-    // can directly read or write to the database.
+    // ─── Helper Functions ───────────────────────────────────────────────────
 
+    // Check if the request is authenticated via Firebase Auth
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Get the user's role from the auth token custom claims
+    // (Set via Admin SDK: admin.auth().setCustomUserClaims(uid, { role: 'ADMIN' }))
+    function getUserRole() {
+      return request.auth.token.role;
+    }
+
+    // Check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == "ADMIN";
+    }
+
+    // Check if user is teacher
+    function isTeacher() {
+      return isAuthenticated() && getUserRole() == "TEACHER";
+    }
+
+    // Check if user is student
+    function isStudent() {
+      return isAuthenticated() && getUserRole() == "STUDENT";
+    }
+
+    // ─── Users Collection ───────────────────────────────────────────────────
+    // Stores all users (ADMIN, TEACHER, STUDENT) with role field
+    // - Authenticated users can read their own data
+    // - Only admins can create/update/delete users
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ─── Attendance Collection ──────────────────────────────────────────────
+    // QR-based daily attendance records (check-in / check-out)
+    // - Authenticated users can read
+    // - Admins and teachers can write
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || isTeacher();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Subject Attendance Collection ──────────────────────────────────────
+    // Subject-wise attendance for students (marked by teachers)
+    // - Authenticated users can read
+    // - Admins and teachers can write
+    match /subjectAttendance/{saId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin() || isTeacher();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Leave Requests Collection ──────────────────────────────────────────
+    // Leave applications and approval workflow
+    // - Authenticated users can read their own leaves
+    // - Admins can read all and approve/reject
+    // - Users can create their own leave requests
+    match /leaveRequests/{leaveId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();  // Only admin can approve/reject
+      allow delete: if isAdmin();
+    }
+
+    // ─── Holidays Collection ────────────────────────────────────────────────
+    // Holiday calendar with class-specific entries
+    // - All authenticated users can read
+    // - Only admins can create/update/delete
+    match /holidays/{holidayId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ─── Settings Collection ────────────────────────────────────────────────
+    // App configuration (timezone, Telegram bot, report settings)
+    // - All authenticated users can read
+    // - Only admins can write
+    match /settings/{settingsId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ─── Deny all other collections ─────────────────────────────────────────
+    // Any collection not explicitly listed above is completely blocked
     match /{document=**} {
       allow read, write: if false;
     }

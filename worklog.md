@@ -228,3 +228,33 @@ Stage Summary:
 - Firestore security rules: deny all client-side access (Admin SDK only)
 - No composite indexes needed (all range/complex queries handled in-memory)
 - Ready for Vercel deployment: add env vars from .env.local to Vercel dashboard
+
+---
+Task ID: 12
+Agent: Main
+Task: Vercel Deployment Required Files + Firebase Secure Rules
+
+Work Log:
+- Updated .gitignore with comprehensive production-ready entries (Firebase, DB, env files, uploads, mini-services, etc.)
+- Updated package.json: renamed to "sankalp-attendance-system", Vercel-compatible build script (`next build` only), removed dev-only pipe commands
+- Updated next.config.ts: removed `output: "standalone"` (Vercel handles this), added `serverExternalPackages: ["firebase-admin"]` for serverless compatibility
+- Created vercel.json: framework=nextjs, region=bom1 (Mumbai), no-cache headers for API routes
+- Updated firestore.rules: comprehensive role-based security rules with:
+  - Helper functions: isAuthenticated(), isAdmin(), isTeacher(), isStudent()
+  - users: read=authenticated, write=admin only
+  - attendance: read=authenticated, write=admin+teacher
+  - subjectAttendance: read=authenticated, write=admin+teacher
+  - leaveRequests: read=authenticated, create=authenticated, update=approve=admin only
+  - holidays: read=authenticated, write=admin only
+  - settings: read=authenticated, write=admin only
+  - Catch-all deny rule for unlisted collections
+- Updated .env.local.example: complete template with clear instructions and all required vars
+- Lint passes, dev server works, login verified
+
+Stage Summary:
+- All deployment files created/updated for Vercel
+- Firestore rules now have role-based access control (defense-in-depth)
+- Package.json has proper name and Vercel-compatible build command
+- next.config.ts configured for serverless Firebase Admin SDK usage
+- vercel.json with Mumbai region and API cache-control headers
+- Ready for: git init → GitHub push → Vercel import → Add env vars → Deploy
